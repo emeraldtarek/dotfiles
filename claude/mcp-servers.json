@@ -15,6 +15,20 @@
     "type": "http",
     "url": "https://mcp.stripe.com/"
   },
+  "jina": {
+    "type": "http",
+    "url": "https://mcp.jina.ai/v1",
+    "headers": {
+      "Authorization": "Bearer ${JINA_API_KEY}"
+    }
+  },
+  "context7": {
+    "type": "http",
+    "url": "https://mcp.context7.com/mcp",
+    "headers": {
+      "CONTEXT7_API_KEY": "${CONTEXT7_API_KEY}"
+    }
+  },
   "duckdb": {
     "type": "stdio",
     "command": "uvx",
@@ -26,5 +40,24 @@
       "--allow-switch-databases"
     ],
     "env": {}
+  },
+  "Neon": {
+    "type": "http",
+    "url": "https://mcp.neon.tech/mcp",
+    "headers": {
+      "Authorization": "Bearer ${NEON_API_KEY}"
+    }
+  },
+  "supabase": {
+    "type": "http",
+    "url": "https://mcp.supabase.com/mcp"
+  },
+  "trello": {
+    "command": "bunx",
+    "args": ["@delorenj/mcp-server-trello"],
+    "env": {
+      "TRELLO_API_KEY": "${TRELLO_API_KEY}",
+      "TRELLO_TOKEN": "${TRELLO_TOKEN}"
+    }
   }
 }

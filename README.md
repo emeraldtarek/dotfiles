@@ -27,6 +27,7 @@ The install script:
 | `tmux/` | Yes | tmux config → `~/.tmux.conf` |
 | `zsh/` | Yes | Zsh config → `~/.zshrc` |
 | `git/` | Yes | Git config → `~/.gitconfig`, `~/.gitignore_global` |
+| `claude/` | Yes | Claude Code config → `~/.claude/` (settings, skills, MCP servers) |
 | `iterm2/` | No | iTerm2 color scheme (imported during install) |
 | `scripts/` | No | OS-specific install scripts |
 
@@ -52,11 +53,21 @@ The install script:
 
 ts_ls, html, cssls, tailwindcss, svelte, lua_ls, graphql, emmet_ls, prismals, pyright
 
+## Environment Variables
+
+Required env vars (API keys, tokens, etc.) are listed in `env.example`. After cloning:
+
+```bash
+make env            # scaffolds missing vars into ~/.zshrc.local
+vim ~/.zshrc.local  # fill in values
+source ~/.zshrc.local
+```
+
 ## Machine-Specific Config
 
 Files not tracked in git — created as templates on first install:
 
-- **`~/.zshrc.local`** — API keys, local PATHs (Pulumi, LM Studio, etc.)
+- **`~/.zshrc.local`** — env vars, API keys, local PATHs (Pulumi, LM Studio, etc.)
 - **`~/.gitconfig-local`** — `includeIf` blocks for work repos
 
 ## Re-running

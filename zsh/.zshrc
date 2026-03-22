@@ -107,6 +107,7 @@ source $ZSH/oh-my-zsh.sh
 
 alias vim='nvim'
 alias dotfiles='make -C ~/Documents/dotfiles'
+alias ralph='~/.claude/skills/ralph/scripts/ralph.sh'
 
 # Machine-specific overrides (API keys, local paths, etc.)
 [ -f ~/.zshrc.local ] && source ~/.zshrc.local

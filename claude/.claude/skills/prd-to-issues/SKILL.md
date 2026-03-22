@@ -52,7 +52,13 @@ Iterate until the user approves the breakdown.
 
 ### 5. Create the GitHub issues
 
-For each approved slice, create a GitHub issue using `gh issue create`. Use the issue body template below.
+First, ensure the `ralph` label exists in the repo:
+
+```bash
+gh label create ralph --color 7057ff --description "Eligible for RALPH AFK loop" 2>/dev/null || true
+```
+
+For each approved slice, create a GitHub issue using `gh issue create` with the `--label ralph` flag. Use the issue body template below.
 
 Create issues in dependency order (blockers first) so you can reference real issue numbers in the "Blocked by" field.
 

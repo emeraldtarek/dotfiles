@@ -4,7 +4,11 @@
     "pyright-lsp@claude-plugins-official": true,
     "frontend-design@claude-plugins-official": true,
     "lua-lsp@claude-plugins-official": true,
-    "sanity-plugin@sanity-agent-toolkit": true
+    "sanity-plugin@sanity-agent-toolkit": true,
+    "ralph-loop@claude-plugins-official": true,
+    "playwright@claude-plugins-official": true
   },
+  "effortLevel": "medium",
+  "voiceEnabled": true,
   "skipDangerousModePermissionPrompt": true
 }

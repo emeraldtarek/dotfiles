@@ -150,7 +150,7 @@ cmd_init() {
     exit 1
   fi
 
-  if ! docker sandbox ls &>/dev/null 2>&1; then
+  if ! docker sandbox ls &>/dev/null; then
     echo "ERROR: 'docker sandbox' not available. Update Docker Desktop to 4.58+."
     exit 1
   fi
@@ -170,7 +170,9 @@ cmd_init() {
   # 4. Create sandbox if needed
   local name
   name="$(sandbox_name)"
-  if docker sandbox ls 2>/dev/null | grep -q "$name"; then
+  local _sb_list
+  _sb_list="$(docker sandbox ls 2>/dev/null || true)"
+  if echo "$_sb_list" | grep -q "$name"; then
     echo "  Sandbox $name ... exists"
   else
     echo "  Creating sandbox $name..."
@@ -219,7 +221,9 @@ cmd_run() {
   done
 
   # Verify sandbox exists
-  if ! docker sandbox ls 2>/dev/null | grep -q "$name"; then
+  local _sb_list
+  _sb_list="$(docker sandbox ls 2>/dev/null || true)"
+  if ! echo "$_sb_list" | grep -q "$name"; then
     echo "ERROR: Sandbox '$name' not found. Run 'ralph init' first." >&2
     exit 1
   fi
@@ -332,7 +336,9 @@ cmd_cleanup() {
   echo "RALPH cleanup — $(basename "$root")"
   echo "──────────────────────────────────"
 
-  if docker sandbox ls 2>/dev/null | grep -q "$name"; then
+  local _sb_list
+  _sb_list="$(docker sandbox ls 2>/dev/null || true)"
+  if echo "$_sb_list" | grep -q "$name"; then
     echo "  Removing sandbox '$name'..."
     docker sandbox rm "$name"
     echo "  Sandbox removed."

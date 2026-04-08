@@ -20,7 +20,7 @@ Pick ONE task. Prioritize in this order:
 3. Polish and quick wins
 4. Refactors
 
-If there are no issues or all tasks are complete, output <promise>COMPLETE</promise>.
+If the provided issues JSON is empty (`[]`), output <promise>COMPLETE</promise>. Otherwise, pick a task and work on it. Do NOT output the completion promise after finishing a task — there may be more tasks in the next iteration.
 
 ## EXPLORATION
 

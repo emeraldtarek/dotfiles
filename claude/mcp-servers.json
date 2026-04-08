@@ -3,10 +3,6 @@
     "type": "http",
     "url": "https://mcp.posthog.com/mcp"
   },
-  "Sanity": {
-    "type": "http",
-    "url": "https://mcp.sanity.io"
-  },
   "vercel": {
     "type": "http",
     "url": "https://mcp.vercel.com"
@@ -51,6 +47,10 @@
   "supabase": {
     "type": "http",
     "url": "https://mcp.supabase.com/mcp"
+  },
+  "adadvisor": {
+    "type": "http",
+    "url": "https://api.adadvisor.ai/mcp"
   },
   "trello": {
     "command": "bunx",

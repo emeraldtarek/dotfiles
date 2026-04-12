@@ -60,7 +60,15 @@
       "TRELLO_TOKEN": "${TRELLO_TOKEN}"
     }
   },
-  "google-ads-mcp": {
+  "google-analytics": {
+    "command": "pipx",
+    "args": ["run", "analytics-mcp"],
+    "env": {
+      "GOOGLE_APPLICATION_CREDENTIALS": "${GOOGLE_CREDENTIALS_PATH}",
+      "GOOGLE_PROJECT_ID": "${GOOGLE_CLOUD_PROJECT_ID}"
+    }
+  },
+  "google-ads": {
     "command": "pipx",
     "args": [
       "run",
@@ -69,8 +77,8 @@
       "google-ads-mcp"
     ],
     "env": {
-      "GOOGLE_APPLICATION_CREDENTIALS": "${ADS_GOOGLE_CREDENTIALS_PATH}",
-      "GOOGLE_PROJECT_ID": "${ADS_GOOGLE_CLOUD_PROJECT_ID}",
+      "GOOGLE_APPLICATION_CREDENTIALS": "${GOOGLE_CREDENTIALS_PATH}",
+      "GOOGLE_PROJECT_ID": "${GOOGLE_CLOUD_PROJECT_ID}",
       "GOOGLE_ADS_DEVELOPER_TOKEN": "${GOOGLE_DEVELOPER_TOKEN}",
       "GOOGLE_ADS_LOGIN_CUSTOMER_ID": "${GOOGLE_ADS_MANAGER_ACCOUNT_ID}"
     }

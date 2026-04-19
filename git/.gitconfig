@@ -9,3 +9,6 @@
 	helper = !gh auth git-credential
 [include]
 	path = ~/.gitconfig-local
+[user]
+	name = Tarek Kekhia
+	email = tarek.kekhia@emeraldlake.io

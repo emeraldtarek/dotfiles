@@ -11,6 +11,10 @@
     "type": "http",
     "url": "https://mcp.stripe.com/"
   },
+  "jira": {
+    "type": "http",
+    "url": "https://mcp.atlassian.com/v1/mcp"
+  },
   "jina": {
     "type": "http",
     "url": "https://mcp.jina.ai/v1",
@@ -81,6 +85,13 @@
       "GOOGLE_PROJECT_ID": "${GOOGLE_CLOUD_PROJECT_ID}",
       "GOOGLE_ADS_DEVELOPER_TOKEN": "${GOOGLE_DEVELOPER_TOKEN}",
       "GOOGLE_ADS_LOGIN_CUSTOMER_ID": "${GOOGLE_ADS_MANAGER_ACCOUNT_ID}"
+    }
+  },
+  "ElevenLabs": {
+    "command": "uvx",
+    "args": ["elevenlabs-mcp"],
+    "env": {
+      "ELEVENLABS_API_KEY": "${ELEVENLABS_API_KEY}"
     }
   }
 }

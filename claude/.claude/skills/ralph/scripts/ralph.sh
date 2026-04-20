@@ -320,47 +320,133 @@ cmd_run() {
 # CLEANUP
 # ══════════════════════════════════════════════════════════════════════════════
 
-cmd_cleanup() {
-  local root name
-  root="$(repo_root)"
-  name="$(sandbox_name)"
+# Thorough removal of a single sandbox: docker sandbox rm → buildx builder rm → vm dir rm.
+# The vm-dir rm acts as a fallback for cases where `docker sandbox rm` silently failed
+# (stuck daemon, dead socket) and left behind a ~926GB sparse Docker.raw file.
+_ralph_remove_one() {
+  local name="$1"
+  local vm_dir="$HOME/.docker/sandboxes/vm/$name"
 
-  local remove_image=0
+  local _sb_list
+  _sb_list="$(docker sandbox ls 2>/dev/null || true)"
+  if echo "$_sb_list" | grep -q "^$name\b\|[[:space:]]$name\b"; then
+    echo "  [$name] docker sandbox rm"
+    docker sandbox rm "$name" 2>/dev/null || echo "    (sandbox rm failed, will force-remove vm dir)"
+  fi
+
+  if docker buildx ls 2>/dev/null | grep -q "^$name[[:space:]]"; then
+    echo "  [$name] docker buildx rm"
+    docker buildx rm "$name" 2>/dev/null || true
+  fi
+
+  if [ -d "$vm_dir" ]; then
+    echo "  [$name] rm -rf $vm_dir"
+    rm -rf "$vm_dir"
+  fi
+}
+
+# Enumerate every ralph-* sandbox found on disk (VM dir is authoritative — picks up
+# orphans that `docker sandbox ls` can no longer see).
+_ralph_list_all() {
+  local vm_root="$HOME/.docker/sandboxes/vm"
+  [ -d "$vm_root" ] || return 0
+  find "$vm_root" -maxdepth 1 -mindepth 1 -type d -name 'ralph-*' -exec basename {} \;
+}
+
+cmd_cleanup() {
+  local remove_image=0 all=0
   while [ $# -gt 0 ]; do
     case "$1" in
       --image) remove_image=1; shift ;;
+      --all)   all=1; shift ;;
       *) echo "Unknown flag: $1" >&2; exit 1 ;;
     esac
   done
 
-  echo "RALPH cleanup — $(basename "$root")"
-  echo "──────────────────────────────────"
-
-  local _sb_list
-  _sb_list="$(docker sandbox ls 2>/dev/null || true)"
-  if echo "$_sb_list" | grep -q "$name"; then
-    echo "  Removing sandbox '$name'..."
-    docker sandbox rm "$name"
-    echo "  Sandbox removed."
+  if [ "$all" -eq 1 ]; then
+    echo "RALPH cleanup — ALL ralph sandboxes"
+    echo "──────────────────────────────────"
+    local found=0
+    while IFS= read -r name; do
+      [ -z "$name" ] && continue
+      found=1
+      _ralph_remove_one "$name"
+    done < <(_ralph_list_all)
+    [ "$found" -eq 0 ] && echo "  No ralph-* sandboxes found."
   else
-    echo "  Sandbox '$name' not found, skipping."
+    local root name
+    root="$(repo_root)"
+    name="$(sandbox_name)"
+
+    echo "RALPH cleanup — $(basename "$root")"
+    echo "──────────────────────────────────"
+    _ralph_remove_one "$name"
+
+    cleanup_env
+    rm -rf "$root/.sandcastle/context" "$root/.sandcastle/logs"
   fi
 
   if [ "$remove_image" -eq 1 ]; then
     if docker image inspect "$RALPH_IMAGE" &>/dev/null 2>&1; then
       echo "  Removing image '$RALPH_IMAGE'..."
       docker rmi "$RALPH_IMAGE"
-      echo "  Image removed."
     else
       echo "  Image '$RALPH_IMAGE' not found, skipping."
     fi
   fi
 
-  # Clean up generated files
-  cleanup_env
-  rm -rf "$root/.sandcastle/context" "$root/.sandcastle/logs"
   echo ""
   echo "Cleanup complete."
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# STATUS
+# ══════════════════════════════════════════════════════════════════════════════
+
+cmd_status() {
+  local vm_root="$HOME/.docker/sandboxes/vm"
+
+  echo "RALPH status"
+  echo "──────────────────────────────────"
+
+  if [ ! -d "$vm_root" ]; then
+    echo "  No sandbox VM directory found at $vm_root"
+    return 0
+  fi
+
+  local _sb_list
+  _sb_list="$(docker sandbox ls 2>/dev/null || true)"
+
+  local found=0 total_bytes=0
+  printf "  %-35s %8s  %-10s  %s\n" "NAME" "SIZE" "DOCKER" "LAST MODIFIED"
+  while IFS= read -r name; do
+    [ -z "$name" ] && continue
+    found=1
+    local dir="$vm_root/$name"
+    local size mtime docker_state
+    size=$(du -sh "$dir" 2>/dev/null | awk '{print $1}')
+    mtime=$(stat -f "%Sm" -t "%Y-%m-%d %H:%M" "$dir" 2>/dev/null)
+    if echo "$_sb_list" | grep -q "^$name\b\|[[:space:]]$name\b"; then
+      docker_state="live"
+    else
+      docker_state="orphan"
+    fi
+    printf "  %-35s %8s  %-10s  %s\n" "$name" "$size" "$docker_state" "$mtime"
+    local bytes
+    bytes=$(du -sk "$dir" 2>/dev/null | awk '{print $1}')
+    total_bytes=$(( total_bytes + ${bytes:-0} ))
+  done < <(_ralph_list_all)
+
+  if [ "$found" -eq 0 ]; then
+    echo "  No ralph-* sandboxes found."
+    return 0
+  fi
+
+  local total_mb=$(( total_bytes / 1024 ))
+  echo ""
+  echo "  Total: ${total_mb} MB across ralph-* sandboxes"
+  echo ""
+  echo "  'orphan' = on disk but docker doesn't see it (safe to 'ralph cleanup --all')"
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -374,7 +460,8 @@ Usage: ralph <command> [options]
 Commands:
   init                Build image, create sandbox, verify env, scaffold .sandcastle/
   run [options]       Start the RALPH loop
-  cleanup [options]   Remove sandbox and clean up
+  status              List all ralph-* sandboxes on disk with size and state
+  cleanup [options]   Remove sandbox(es) and clean up
 
 Run options:
   --iterations N      Max iterations (default: 50 or .sandcastle/config.json)
@@ -383,6 +470,7 @@ Run options:
   --prompt <file>     Prompt-driven mode (instead of GitHub issues)
 
 Cleanup options:
+  --all               Remove every ralph-* sandbox on disk (not just current repo's)
   --image             Also remove the Docker image
 USAGE
 }
@@ -390,6 +478,7 @@ USAGE
 case "${1:-}" in
   init)    shift; cmd_init "$@" ;;
   run)     shift; cmd_run "$@" ;;
+  status)  shift; cmd_status "$@" ;;
   cleanup) shift; cmd_cleanup "$@" ;;
   -h|--help|help) usage ;;
   "") usage; exit 1 ;;

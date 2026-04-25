@@ -112,6 +112,12 @@ alias ralph='~/.claude/skills/ralph/scripts/ralph.sh'
 # Machine-specific overrides (API keys, local paths, etc.)
 [ -f ~/.zshrc.local ] && source ~/.zshrc.local
 
+# AWS CLI completion (v2 ships aws_completer)
+if command -v aws_completer &>/dev/null; then
+    autoload -U +X bashcompinit && bashcompinit
+    complete -C "$(command -v aws_completer)" aws
+fi
+
 # The next line updates PATH for the Google Cloud SDK.
 if [ -f '/Users/tarekkekhia/Downloads/google-cloud-sdk/path.zsh.inc' ]; then . '/Users/tarekkekhia/Downloads/google-cloud-sdk/path.zsh.inc'; fi
 

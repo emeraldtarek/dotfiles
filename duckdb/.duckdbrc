@@ -1,6 +1,6 @@
 -- Auto-loaded by the DuckDB CLI on startup.
--- Reads AWS creds from the environment (exported by the `ddb` zsh function
--- via `aws configure export-credentials`). Region matches AdAdvisor prod.
+-- Reads AWS creds from ~/.aws/credentials (long-lived IAM user keys).
+-- No expiry, no refresh juggling — works for `duckdb --ui` indefinitely.
 
 INSTALL httpfs;
 INSTALL aws;
@@ -10,6 +10,7 @@ LOAD aws;
 CREATE OR REPLACE SECRET aws_secret (
     TYPE s3,
     PROVIDER credential_chain,
-    CHAIN 'env',
+    CHAIN 'config',
+    PROFILE 'adadvisor-logs',
     REGION 'us-east-2'
 );

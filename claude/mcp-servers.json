@@ -56,6 +56,10 @@
     "type": "http",
     "url": "https://api.adadvisor.ai/mcp"
   },
+  "metaAds": {
+    "type": "http",
+    "url": "https://mcp.facebook.com/ads"
+  },
   "trello": {
     "command": "bunx",
     "args": ["@delorenj/mcp-server-trello"],

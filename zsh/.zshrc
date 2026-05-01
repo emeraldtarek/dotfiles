@@ -118,6 +118,18 @@ if command -v aws_completer &>/dev/null; then
     complete -C "$(command -v aws_completer)" aws
 fi
 
+# DuckDB launcher: ensures the AWS session is live (re-runs `aws login` if
+# the IAM user temp creds have expired), exports them into the env so
+# DuckDB's CHAIN 'env' provider can pick them up, then opens duckdb.
+# Pass through any args (e.g. a database file path).
+ddb() {
+    if ! aws sts get-caller-identity >/dev/null 2>&1; then
+        aws login || return 1
+    fi
+    eval "$(aws configure export-credentials --format env)"
+    duckdb "$@"
+}
+
 # The next line updates PATH for the Google Cloud SDK.
 if [ -f '/Users/tarekkekhia/Downloads/google-cloud-sdk/path.zsh.inc' ]; then . '/Users/tarekkekhia/Downloads/google-cloud-sdk/path.zsh.inc'; fi
 

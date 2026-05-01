@@ -1,0 +1,15 @@
+-- Auto-loaded by the DuckDB CLI on startup.
+-- Reads AWS creds from the environment (exported by the `ddb` zsh function
+-- via `aws configure export-credentials`). Region matches AdAdvisor prod.
+
+INSTALL httpfs;
+INSTALL aws;
+LOAD httpfs;
+LOAD aws;
+
+CREATE OR REPLACE SECRET aws_secret (
+    TYPE s3,
+    PROVIDER credential_chain,
+    CHAIN 'env',
+    REGION 'us-east-2'
+);

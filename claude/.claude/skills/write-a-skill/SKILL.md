@@ -26,14 +26,21 @@ source: https://github.com/mattpocock/skills/tree/main/write-a-skill
 
 ## Skill Structure
 
+Use Anthropic's recommended three-tier layout from [skill-creator](https://github.com/anthropics/skills/blob/main/skills/skill-creator/SKILL.md):
+
 ```
 skill-name/
 ├── SKILL.md           # Main instructions (required)
-├── REFERENCE.md       # Detailed docs (if needed)
-├── EXAMPLES.md        # Usage examples (if needed)
-└── scripts/           # Utility scripts (if needed)
-└── helper.js
+├── scripts/           # Executable utility scripts
+│   └── helper.py
+├── assets/            # Templates, icons, fonts, stylesheets — files used in output
+│   └── template.css
+└── references/        # Docs loaded into context as needed
+    ├── example.md
+    └── advanced.md
 ```
+
+Domain variants go under `references/` (e.g. `references/aws.md`, `references/gcp.md`) with selection logic kept in SKILL.md.
 
 ## SKILL.md Template
 
@@ -98,6 +105,41 @@ Add utility scripts when:
 
 Scripts save tokens and improve reliability vs generated code.
 
+## Python Dependencies — always use `uv` + PEP 723
+
+For Python scripts in `scripts/`, declare dependencies inline using [PEP 723](https://peps.python.org/pep-0723/) and run with `uv run`. **Never** require `pip install` against the system Python or a project venv — every skill script must be self-contained and run in an ephemeral, cached venv that uv manages automatically.
+
+Script header template:
+
+```python
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#   "package-a>=X.Y",
+#   "package-b",
+# ]
+# ///
+"""Module docstring..."""
+```
+
+Invoke from SKILL.md as:
+
+```bash
+uv run ~/.claude/skills/<skill>/scripts/<name>.py <args>
+```
+
+Why this is the rule:
+
+- Self-contained: nothing to install before the skill works on a new machine (only `uv` itself, which is universal).
+- No system Python pollution and no PEP 668 "externally managed environment" friction on macOS/Homebrew Python.
+- Dependencies are versioned alongside the script — the source of truth lives in the skill repo, not a global site-packages.
+- uv caches resolved environments per dep-set, so subsequent runs are instant.
+
+Do **not** use: `pip install --user`, `--break-system-packages`, `requirements.txt` outside a `pyproject.toml`, or assumptions that any Python package is preinstalled.
+
+For non-Python languages, follow the equivalent local-only convention (Node: `npx`; Bash: bundle the binary or check for it; etc.) — never mutate global state.
+
 ## When to Split Files
 
 Split into separate files when:
@@ -110,8 +152,10 @@ Split into separate files when:
 
 After drafting, verify:
 
-- [ ] Description includes triggers ("Use when...")
-- [ ] SKILL.md under 100 lines
+- [ ] Description includes triggers ("Use when...") and is slightly "pushy" to combat undertriggering
+- [ ] SKILL.md under 100 lines (Anthropic's official ceiling is 500 — stay well under)
+- [ ] Layout uses `scripts/`, `assets/`, `references/` subdirs (not flat) when there's more than just SKILL.md
+- [ ] Any Python script in `scripts/` declares deps via PEP 723 and is run with `uv run` — no `pip install`
 - [ ] No time-sensitive info
 - [ ] Consistent terminology
 - [ ] Concrete examples included

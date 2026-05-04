@@ -16,6 +16,10 @@ fi
 # ── Pre-stow: ensure directories exist to prevent tree folding ────
 mkdir -p "$HOME/.claude"
 
+# ── Tool cache dirs ────────────────────────────────────────────────
+# Terragrunt provider cache (referenced by TG_PROVIDER_CACHE_DIR in zsh/.zshrc)
+mkdir -p "$HOME/.cache/terragrunt/providers"
+
 # ── Stow packages ─────────────────────────────────────────────────
 echo "Stowing dotfiles..."
 for pkg in nvim tmux zsh git claude; do

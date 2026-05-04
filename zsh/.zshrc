@@ -122,3 +122,10 @@ if [ -f '/Users/tarekkekhia/Downloads/google-cloud-sdk/path.zsh.inc' ]; then . '
 
 # The next line enables shell command completion for gcloud.
 if [ -f '/Users/tarekkekhia/Downloads/google-cloud-sdk/completion.zsh.inc' ]; then . '/Users/tarekkekhia/Downloads/google-cloud-sdk/completion.zsh.inc'; fi
+
+# Terragrunt provider cache server — downloads each Terraform provider once
+# and serves it to all leaves (safe for parallel `run --all`, unlike plain
+# TF_PLUGIN_CACHE_DIR). Saves ~10 GB of redundant AWS provider downloads in
+# multi-leaf repos like iac-adadvisor.
+export TG_PROVIDER_CACHE=1
+export TG_PROVIDER_CACHE_DIR="$HOME/.cache/terragrunt/providers"

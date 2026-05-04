@@ -19,6 +19,9 @@ mkdir -p "$HOME/.claude"
 # ── Tool cache dirs ────────────────────────────────────────────────
 # Terragrunt provider cache (referenced by TG_PROVIDER_CACHE_DIR in zsh/.zshrc)
 mkdir -p "$HOME/.cache/terragrunt/providers"
+# Terraform filesystem mirror (used by repos that pre-populate with
+# `terraform providers mirror` for fast multi-leaf lock regen)
+mkdir -p "$HOME/tf-mirror"
 
 # ── Stow packages ─────────────────────────────────────────────────
 echo "Stowing dotfiles..."

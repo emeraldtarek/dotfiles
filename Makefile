@@ -1,7 +1,7 @@
 DOTFILES_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 STOW_PKGS := nvim tmux zsh git claude duckdb
 
-.PHONY: help stow restow unstow install env mcp
+.PHONY: help stow restow unstow install env mcp skills
 .DEFAULT_GOAL := help
 
 help:
@@ -13,6 +13,7 @@ help:
 	@echo "  unstow    Remove all symlinks"
 	@echo "  env       Scaffold missing env vars into ~/.zshrc.local"
 	@echo "  mcp       Merge MCP servers into ~/.claude.json"
+	@echo "  skills    Refresh vendored skills from upstream (SKILL=name for one)"
 	@echo "  install   Full machine bootstrap"
 
 stow:
@@ -61,6 +62,9 @@ env:
 	else \
 		echo "Edit ~/.zshrc.local to fill in values, then: source ~/.zshrc.local"; \
 	fi
+
+skills:
+	@bash "$(DOTFILES_DIR)/claude/scripts/update-skills.sh" $(SKILL)
 
 install:
 	@bash "$(DOTFILES_DIR)/install.sh"

@@ -1,0 +1,7 @@
+# Vendored skills sources. Edit and run scripts/update-skills.sh to refresh.
+# Tab-separated columns: repo<TAB>ref<TAB>subpath<TAB>dest
+#   repo     upstream git URL
+#   ref      branch, tag, or commit SHA
+#   subpath  path inside the repo to copy (use "." if the repo root is the skill)
+#   dest     directory name under claude/.claude/skills/
+https://github.com/anthropics/skills.git	main	skills/mcp-builder	mcp-builder

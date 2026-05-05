@@ -109,6 +109,194 @@ alias vim='nvim'
 alias dotfiles='make -C ~/Documents/dotfiles'
 alias ralph='~/.claude/skills/ralph/scripts/ralph.sh'
 
+# Create a git worktree in /tmp/gitworktrees and copy .env files from a source folder
+# Usage: gwtc <src_folder> <worktree_name> [branch_name]
+gwtc() {
+  local src_folder="$1"
+  local wt_name="$2"
+  local branch_name="$3"
+
+  if [[ -z "$src_folder" || -z "$wt_name" ]]; then
+    echo "Usage: gwtc <src_folder_path> <worktree_name> [branch_name]"
+    echo "  src_folder_path  Path to the repo (relative or absolute)"
+    echo "  worktree_name    Name for the worktree directory"
+    echo "  branch_name      Branch to create (default: wt/<worktree_name>)"
+    return 1
+  fi
+
+  # Resolve to absolute path
+  local abs_src
+  abs_src="$(cd "$src_folder" 2>/dev/null && pwd)"
+  if [[ $? -ne 0 ]]; then
+    echo "Error: '$src_folder' is not a valid directory"
+    return 1
+  fi
+
+  # Verify it's inside a git repo
+  if ! git -C "$abs_src" rev-parse --is-inside-work-tree &>/dev/null; then
+    echo "Error: '$abs_src' is not inside a git repository"
+    return 1
+  fi
+
+  # Auto-generate branch name if not provided
+  if [[ -z "$branch_name" ]]; then
+    branch_name="wt/${wt_name}"
+  fi
+
+  local wt_base="/tmp/gitworktrees"
+  local wt_path="${wt_base}/${wt_name}"
+
+  if [[ -d "$wt_path" ]]; then
+    echo "Error: worktree path '$wt_path' already exists"
+    return 1
+  fi
+
+  mkdir -p "$wt_base"
+
+  # Fetch latest remote so we branch from origin/main, not local HEAD
+  echo "Fetching latest from origin..."
+  git -C "$abs_src" fetch origin main --quiet
+
+  # Check if branch already exists (local or remote)
+  if git -C "$abs_src" show-ref --verify --quiet "refs/heads/$branch_name" 2>/dev/null; then
+    echo "Creating worktree at: $wt_path (existing branch: $branch_name)"
+    if ! git -C "$abs_src" worktree add "$wt_path" "$branch_name"; then
+      echo "Error: failed to create worktree"
+      return 1
+    fi
+  else
+    echo "Creating worktree at: $wt_path (new branch: $branch_name) from origin/main"
+    if ! git -C "$abs_src" worktree add "$wt_path" -b "$branch_name" origin/main; then
+      echo "Error: failed to create worktree"
+      return 1
+    fi
+  fi
+
+  # Copy .env files preserving relative paths
+  local env_count=0
+  while IFS= read -r -d '' env_file; do
+    local rel_path="${env_file#$abs_src/}"
+    local dest_dir="${wt_path}/$(dirname "$rel_path")"
+    mkdir -p "$dest_dir"
+    cp "$env_file" "${wt_path}/${rel_path}"
+    echo "  Copied: $rel_path"
+    ((env_count++))
+  done < <(find "$abs_src" -name '.env*' -not -path '*node_modules*' -not -path '*.git/*' -not -path '*/.venv/*' -print0)
+
+  echo ""
+  echo "Worktree ready: $wt_path"
+  echo "Branch: $branch_name"
+  echo "Env files copied: $env_count"
+}
+
+# List all worktrees created via gwtc
+# Usage: gwtl
+gwtl() {
+  local wt_base="/tmp/gitworktrees"
+
+  if [[ ! -d "$wt_base" ]] || [[ -z "$(ls -A "$wt_base" 2>/dev/null)" ]]; then
+    echo "No worktrees in $wt_base"
+    return 0
+  fi
+
+  printf "%-20s %-30s %s\n" "NAME" "BRANCH" "PATH"
+  printf "%-20s %-30s %s\n" "----" "------" "----"
+
+  for wt_dir in "$wt_base"/*/; do
+    [[ -d "$wt_dir" ]] || continue
+    local name="$(basename "$wt_dir")"
+    local branch=""
+    if git -C "$wt_dir" rev-parse --abbrev-ref HEAD &>/dev/null; then
+      branch="$(git -C "$wt_dir" rev-parse --abbrev-ref HEAD)"
+    else
+      branch="(detached/broken)"
+    fi
+    printf "%-20s %-30s %s\n" "$name" "$branch" "$wt_dir"
+  done
+}
+
+# Delete a worktree created via gwtc (keeps branch by default)
+# Usage: gwtd <worktree_name> [--delete-branch]
+gwtd() {
+  local wt_name="$1"
+  local delete_branch=false
+
+  if [[ -z "$wt_name" ]]; then
+    echo "Usage: gwtd <worktree_name> [--delete-branch]"
+    echo "  Removes the worktree. Use --delete-branch to also delete the branch."
+    echo ""
+    echo "Available worktrees:"
+    gwtl
+    return 1
+  fi
+
+  if [[ "$2" == "--delete-branch" ]]; then
+    delete_branch=true
+  fi
+
+  local wt_base="/tmp/gitworktrees"
+  local wt_path="${wt_base}/${wt_name}"
+
+  if [[ ! -d "$wt_path" ]]; then
+    echo "Error: worktree '$wt_name' not found at $wt_path"
+    return 1
+  fi
+
+  # Get the branch name before removing
+  local branch=""
+  if git -C "$wt_path" rev-parse --abbrev-ref HEAD &>/dev/null; then
+    branch="$(git -C "$wt_path" rev-parse --abbrev-ref HEAD)"
+  fi
+
+  # Find the main repo this worktree belongs to
+  local main_repo=""
+  main_repo="$(git -C "$wt_path" worktree list --porcelain | head -1 | sed 's/^worktree //')"
+
+  # Remove the worktree via git
+  if ! git -C "$main_repo" worktree remove "$wt_path" --force; then
+    echo "Error: failed to remove worktree"
+    return 1
+  fi
+
+  echo "Removed worktree: $wt_path"
+
+  # Only delete the branch if --delete-branch was passed
+  if [[ "$delete_branch" == true && -n "$branch" && "$branch" != "HEAD" ]]; then
+    if git -C "$main_repo" branch -d "$branch" 2>/dev/null; then
+      echo "Deleted branch: $branch"
+    else
+      echo "Branch '$branch' has unmerged changes. Use 'git -C $main_repo branch -D $branch' to force delete."
+    fi
+  else
+    echo "Kept branch: $branch"
+  fi
+}
+
+# CD into a worktree and run Claude Code with --dangerously-skip-permissions
+# Usage: gwtclaude <worktree_name>
+gwtclaude() {
+  local wt_name="$1"
+
+  if [[ -z "$wt_name" ]]; then
+    echo "Usage: gwtclaude <worktree_name>"
+    echo "  Opens a worktree in Claude Code with --dangerously-skip-permissions."
+    echo ""
+    echo "Available worktrees:"
+    gwtl
+    return 1
+  fi
+
+  local wt_base="/tmp/gitworktrees"
+  local wt_path="${wt_base}/${wt_name}"
+
+  if [[ ! -d "$wt_path" ]]; then
+    echo "Error: worktree '$wt_name' not found at $wt_path"
+    return 1
+  fi
+
+  cd "$wt_path" && claude --dangerously-skip-permissions
+}
+
 # Machine-specific overrides (API keys, local paths, etc.)
 [ -f ~/.zshrc.local ] && source ~/.zshrc.local
 

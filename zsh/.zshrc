@@ -297,6 +297,159 @@ gwtclaude() {
   cd "$wt_path" && claude --dangerously-skip-permissions
 }
 
+# direnv hook — auto-loads .envrc when you cd into a project
+if command -v direnv &>/dev/null; then
+    eval "$(direnv hook zsh)"
+fi
+
+# macOS Keychain helpers — store/retrieve secrets so they never live in
+# .env files or shell history. Pair with `from_keychain` / `keychain_export`
+# in ~/.config/direnv/direnvrc to load them per-project via direnv.
+#
+#   kc-set myproject-db        # prompts silently, stores under your user
+#   kc-get myproject-db        # prints the value
+#   kc-rm  myproject-db        # deletes it
+kc-set() {
+    local name="$1"
+    local value="$2"
+    if [[ -z "$name" ]]; then
+        echo "Usage: kc-set <name> [value]"
+        echo "  Stores a secret in macOS Keychain. Omits value to prompt silently."
+        return 1
+    fi
+    if [[ -z "$value" ]]; then
+        printf "Value for %s: " "$name"
+        read -rs value
+        echo
+    fi
+    security add-generic-password -U -a "$USER" -s "$name" -w "$value" \
+        && echo "Stored '$name' in Keychain"
+}
+
+kc-get() {
+    local name="$1"
+    if [[ -z "$name" ]]; then
+        echo "Usage: kc-get <name>"
+        return 1
+    fi
+    security find-generic-password -a "$USER" -s "$name" -w
+}
+
+kc-rm() {
+    local name="$1"
+    if [[ -z "$name" ]]; then
+        echo "Usage: kc-rm <name>"
+        return 1
+    fi
+    security delete-generic-password -a "$USER" -s "$name"
+}
+
+# Import secrets from a .env file into Keychain in bulk. Asks for a project
+# prefix (e.g. fahad-api), picks up only UPPERCASE_KEY=value lines, stores
+# each as <prefix>-<kebab-key>, writes keychain_export lines to .envrc, and
+# strips the moved lines from .env. Non-matching lines (comments, blanks,
+# lowercase keys) are left in .env untouched.
+#
+#   cd into project, then: kc-import           # uses ./.env
+#                          kc-import path/.env
+kc-import() {
+    local env_file="${1:-.env}"
+    if [[ ! -f "$env_file" ]]; then
+        echo "Error: $env_file not found"
+        return 1
+    fi
+
+    printf "Project key prefix (e.g. fahad-api): "
+    local prefix
+    read -r prefix
+    if [[ -z "$prefix" ]]; then
+        echo "Error: prefix is required"
+        return 1
+    fi
+
+    local -a keys values names
+    local line key value kebab kc_name
+
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        line="${line%$'\r'}"
+        if [[ "$line" =~ ^([A-Z][A-Z0-9_]*)=(.*)$ ]]; then
+            key="${match[1]}"
+            value="${match[2]}"
+            if [[ "$value" =~ ^\"(.*)\"$ ]]; then
+                value="${match[1]}"
+            elif [[ "$value" =~ ^\'(.*)\'$ ]]; then
+                value="${match[1]}"
+            fi
+            kebab="${(L)key//_/-}"
+            kc_name="${prefix}-${kebab}"
+            keys+=("$key")
+            values+=("$value")
+            names+=("$kc_name")
+        fi
+    done < "$env_file"
+
+    if [[ ${#keys[@]} -eq 0 ]]; then
+        echo "No matching UPPERCASE_NAME=value lines in $env_file"
+        return 0
+    fi
+
+    echo
+    echo "Will move ${#keys[@]} secret(s) from $env_file to Keychain:"
+    local i
+    for ((i = 1; i <= ${#keys[@]}; i++)); do
+        printf "  %-32s -> %s\n" "${keys[i]}" "${names[i]}"
+    done
+    echo
+    printf "Proceed? [y/N] "
+    local ans
+    read -r ans
+    if [[ "$ans" != "y" && "$ans" != "Y" ]]; then
+        echo "Aborted"
+        return 1
+    fi
+
+    local backup="${env_file}.bak.$(date +%s)"
+    cp "$env_file" "$backup"
+    echo "Backup: $backup"
+
+    local failed=0
+    for ((i = 1; i <= ${#keys[@]}; i++)); do
+        if security add-generic-password -U -a "$USER" -s "${names[i]}" -w "${values[i]}" 2>/dev/null; then
+            echo "  stored ${names[i]}"
+        else
+            echo "  FAILED ${names[i]}"
+            ((failed++))
+        fi
+    done
+    if (( failed > 0 )); then
+        echo "Aborted: $failed Keychain write(s) failed. $env_file unchanged."
+        return 1
+    fi
+
+    local envrc=".envrc"
+    touch "$envrc"
+    for ((i = 1; i <= ${#keys[@]}; i++)); do
+        local export_line="keychain_export ${keys[i]} ${names[i]}"
+        grep -Fxq "$export_line" "$envrc" || echo "$export_line" >> "$envrc"
+    done
+    echo "Updated: $envrc"
+
+    local tmp
+    tmp="$(mktemp)"
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        local stripped="${line%$'\r'}"
+        if [[ "$stripped" =~ ^[A-Z][A-Z0-9_]*= ]]; then
+            continue
+        fi
+        printf '%s\n' "$line"
+    done < "$env_file" > "$tmp"
+    mv "$tmp" "$env_file"
+    echo "Cleaned: $env_file (matched lines removed)"
+
+    echo
+    echo "Next: direnv allow"
+}
+
 # Machine-specific overrides (API keys, local paths, etc.)
 [ -f ~/.zshrc.local ] && source ~/.zshrc.local
 

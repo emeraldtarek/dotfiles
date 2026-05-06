@@ -1,0 +1,32 @@
+# Auto-sourced by direnv before every project's .envrc.
+# Provides helpers for pulling secrets from macOS Keychain so they never
+# end up in committed files (and never reach an LLM watching the repo).
+#
+# Set a secret once (interactive, no shell history):
+#   kc-set myproject-db
+#
+# Use it in a project's .envrc (safe to commit — contains only references):
+#   keychain_export DATABASE_URL myproject-db
+#   export STRIPE_KEY=$(from_keychain myproject-stripe)
+#
+# Then: cd into the project, `direnv allow`, secrets load on cd.
+
+from_keychain() {
+  local name="$1"
+  if [[ -z "$name" ]]; then
+    log_error "from_keychain: missing keychain item name"
+    return 1
+  fi
+  if ! security find-generic-password -a "$USER" -s "$name" -w 2>/dev/null; then
+    log_error "from_keychain: '$name' not in Keychain — set it with: kc-set $name"
+    return 1
+  fi
+}
+
+keychain_export() {
+  local var_name="$1"
+  local kc_name="${2:-$1}"
+  local value
+  value="$(from_keychain "$kc_name")" || return 1
+  export "$var_name=$value"
+}

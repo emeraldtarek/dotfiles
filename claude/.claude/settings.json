@@ -18,5 +18,27 @@
   "effortLevel": "xhigh",
   "skipDangerousModePermissionPrompt": true,
   "editorMode": "vim",
-  "voiceEnabled": true
+  "voiceEnabled": true,
+  "permissions": {
+    "deny": [
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(**/secrets/**)",
+      "Read(**/credentials.json)",
+      "Read(**/.aws/credentials)",
+      "Read(**/.netrc)",
+      "Read(**/.pgpass)",
+      "Read(**/.ssh/**)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)",
+      "Bash(cat *.env*)",
+      "Bash(cat .env*)",
+      "Bash(cat **/.env*)",
+      "Bash(printenv)",
+      "Bash(env)",
+      "Bash(security find-generic-password*)",
+      "Bash(security dump-keychain*)",
+      "Bash(kc-get*)"
+    ]
+  }
 }

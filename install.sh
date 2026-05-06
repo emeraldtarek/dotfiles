@@ -25,7 +25,7 @@ mkdir -p "$HOME/tf-mirror"
 
 # ── Stow packages ─────────────────────────────────────────────────
 echo "Stowing dotfiles..."
-for pkg in nvim tmux zsh git claude; do
+for pkg in nvim tmux zsh git claude direnv; do
     # Back up existing files that would conflict with stow
     for f in $(stow --no --verbose --target="$HOME" "$pkg" 2>&1 | grep "existing target" | sed 's/.*: //'); do
         if [ -e "$HOME/$f" ] && [ ! -L "$HOME/$f" ]; then

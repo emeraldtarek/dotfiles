@@ -19,6 +19,19 @@
   "skipDangerousModePermissionPrompt": true,
   "editorMode": "vim",
   "voiceEnabled": true,
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$HOME\"/.claude/hooks/block-dangerous-git.sh"
+          }
+        ]
+      }
+    ]
+  },
   "permissions": {
     "deny": [
       "Read(**/.env)",

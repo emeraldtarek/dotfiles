@@ -30,6 +30,18 @@
           }
         ]
       }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash|Read|WebFetch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$HOME\"/.claude/hooks/redact-secrets.py",
+            "timeout": 5
+          }
+        ]
+      }
     ]
   },
   "permissions": {
@@ -44,14 +56,13 @@
       "Read(**/.ssh/**)",
       "Read(**/*.pem)",
       "Read(**/*.key)",
-      "Bash(cat *.env*)",
-      "Bash(cat .env*)",
-      "Bash(cat **/.env*)",
-      "Bash(printenv)",
-      "Bash(env)",
-      "Bash(security find-generic-password*)",
-      "Bash(security dump-keychain*)",
-      "Bash(kc-get*)"
+      "Bash(*cat *.env*)",
+      "Bash(*cat .env*)",
+      "Bash(*printenv*)",
+      "Bash(*security find-generic-password*)",
+      "Bash(*security dump-keychain*)",
+      "Bash(*kc-get*)",
+      "Bash(*from_keychain*)"
     ]
   }
 }

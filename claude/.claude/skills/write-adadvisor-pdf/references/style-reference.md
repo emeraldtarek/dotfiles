@@ -21,7 +21,7 @@ Complete element styling for `write-adadvisor-pdf` outputs.
 | Cover title (h1) | 32pt, weight 800, ink, with magenta→orange accent bar |
 | Cover eyebrow | 9.5pt uppercase magenta, letter-spaced |
 | Cover meta grid | 2-col key/value, top + bottom hairline rules |
-| Running header | Logo + brand name (left), audience (right), 8.5pt uppercase muted |
+| Running header | Logo + brand name + document kind, single line, no separator rule, 8.5pt uppercase muted |
 | Running footer | Magenta→orange stripe + "Confidential" (left), "Page N" (right) |
 | Body H1 | 20pt bold |
 | Body H2 | 14pt bold with magenta left bar |
@@ -77,7 +77,6 @@ The `.section` and `.num` classes aren't in the default stylesheet — they live
 | `brand_name` | "Ad Advisor AI" | Header brand name |
 | `brand_tag` | "AI-Native Growth, on Autopilot" | Tagline under brand on cover |
 | `document_kind` | "Document" | Header label, e.g. "Offer Letter" |
-| `audience` | (none) | Top-right header label per body page |
-| `meta` | (none) | List of `{label, value}` for cover key/value grid |
+| `meta` | (none) | List of `{label, value}` for cover key/value grid (use this for recipient/audience) |
 | `footer_note` | "Ad Advisor AI · Issued <today>" | Cover-page bottom line |
 | `no_cover` | `false` | Skip the cover page entirely |

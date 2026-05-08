@@ -322,8 +322,10 @@ kc-set() {
         read -rs value
         echo
     fi
-    security add-generic-password -U -a "$USER" -s "$name" -w "$value" \
-        && echo "Stored '$name' in Keychain"
+    if security add-generic-password -U -a "$USER" -s "$name" -w "$value"; then
+        echo "Stored '$name' in Keychain"
+        kc-redact-add "$name" >/dev/null
+    fi
 }
 
 kc-get() {
@@ -341,7 +343,113 @@ kc-rm() {
         echo "Usage: kc-rm <name>"
         return 1
     fi
-    security delete-generic-password -a "$USER" -s "$name"
+    if security delete-generic-password -a "$USER" -s "$name"; then
+        local config="${CLAUDE_REDACT_CONFIG:-$HOME/.config/claude-redact/secrets}"
+        if [[ -f "$config" ]] && grep -Fxq "$name" "$config" 2>/dev/null; then
+            grep -Fvx "$name" "$config" > "${config}.tmp" && mv "${config}.tmp" "$config"
+            echo "Removed '$name' from redact list"
+        fi
+    fi
+}
+
+# Add a Keychain entry name to the redact-secrets.py hook's watchlist.
+# The hook then redacts any occurrence of that secret's value from
+# Bash/Read/WebFetch tool output before Claude sees it.
+kc-redact-add() {
+    local name="$1"
+    if [[ -z "$name" ]]; then
+        echo "Usage: kc-redact-add <keychain-name>"
+        return 1
+    fi
+    local config="${CLAUDE_REDACT_CONFIG:-$HOME/.config/claude-redact/secrets}"
+    mkdir -p "$(dirname "$config")"
+    touch "$config"
+    if grep -Fxq "$name" "$config" 2>/dev/null; then
+        echo "Already on redact list: $name"
+    else
+        echo "$name" >> "$config"
+        echo "Added to redact list: $name"
+    fi
+}
+
+# Remove a name from the redact list WITHOUT deleting the keychain entry.
+# Use this for entries that aren't actually secret-shaped (ports, sizes,
+# IDs) — they cause false-positive matches and slow the hook down.
+kc-redact-rm() {
+    local name="$1"
+    if [[ -z "$name" ]]; then
+        echo "Usage: kc-redact-rm <keychain-name>"
+        return 1
+    fi
+    local config="${CLAUDE_REDACT_CONFIG:-$HOME/.config/claude-redact/secrets}"
+    if [[ ! -f "$config" ]] || ! grep -Fxq "$name" "$config"; then
+        echo "Not on redact list: $name"
+        return 0
+    fi
+    grep -Fvx "$name" "$config" > "${config}.tmp" && mv "${config}.tmp" "$config"
+    echo "Removed from redact list: $name (keychain entry unchanged)"
+}
+
+# Show every entry on the redact list with the length of its keychain value.
+# Short values (<8 chars) are skipped by the hook anyway. Use this to find
+# entries to prune via kc-redact-rm.
+kc-redact-list() {
+    local config="${CLAUDE_REDACT_CONFIG:-$HOME/.config/claude-redact/secrets}"
+    if [[ ! -f "$config" ]]; then
+        echo "No redact list at: $config"
+        return 0
+    fi
+    printf "%-50s %s\n" "NAME" "VALUE_LEN"
+    printf "%-50s %s\n" "----" "---------"
+    while IFS= read -r name; do
+        [[ -z "$name" || "$name" =~ ^[[:space:]]*# ]] && continue
+        local value
+        value=$(security find-generic-password -a "$USER" -s "$name" -w 2>/dev/null)
+        local len=${#value}
+        local marker=""
+        (( len < 8 )) && marker="  (skipped: too short)"
+        printf "%-50s %d%s\n" "$name" "$len" "$marker"
+    done < "$config"
+}
+
+# List every generic-password service name in your login keychain.
+kc-list() {
+    security dump-keychain 2>/dev/null \
+        | awk -F\" '/"svce"<blob>="/ {print $4}' \
+        | sort -u
+}
+
+# One-shot: scan the login keychain for entries whose names start with
+# the given prefix and add each to the redact-secrets watchlist.
+# Use this once after enabling the hook to backfill existing Keychain entries.
+kc-redact-import-existing() {
+    local prefix="$1"
+    if [[ -z "$prefix" ]]; then
+        echo "Usage: kc-redact-import-existing <prefix>"
+        echo "  Adds every keychain entry whose name starts with <prefix> to the redact list."
+        echo "  Tip: run 'kc-list' first to see what's in your keychain."
+        return 1
+    fi
+    local matches found=0 already=0
+    matches=$(kc-list | grep "^${prefix}" || true)
+    if [[ -z "$matches" ]]; then
+        echo "No keychain entries start with '$prefix'"
+        return 0
+    fi
+    while IFS= read -r name; do
+        [[ -z "$name" ]] && continue
+        local config="${CLAUDE_REDACT_CONFIG:-$HOME/.config/claude-redact/secrets}"
+        mkdir -p "$(dirname "$config")"
+        touch "$config"
+        if grep -Fxq "$name" "$config" 2>/dev/null; then
+            ((already++))
+        else
+            echo "$name" >> "$config"
+            echo "  added: $name"
+            ((found++))
+        fi
+    done <<< "$matches"
+    echo "Done — added $found, already had $already"
 }
 
 # Import secrets from a .env file into Keychain in bulk. Asks for a project
@@ -433,6 +541,18 @@ kc-import() {
         grep -Fxq "$export_line" "$envrc" || echo "$export_line" >> "$envrc"
     done
     echo "Updated: $envrc"
+
+    local redact_cfg="${CLAUDE_REDACT_CONFIG:-$HOME/.config/claude-redact/secrets}"
+    mkdir -p "$(dirname "$redact_cfg")"
+    touch "$redact_cfg"
+    local added=0
+    for ((i = 1; i <= ${#names[@]}; i++)); do
+        if ! grep -Fxq "${names[i]}" "$redact_cfg" 2>/dev/null; then
+            echo "${names[i]}" >> "$redact_cfg"
+            ((added++))
+        fi
+    done
+    [[ $added -gt 0 ]] && echo "Added $added entry(s) to redact list: $redact_cfg"
 
     local tmp
     tmp="$(mktemp)"

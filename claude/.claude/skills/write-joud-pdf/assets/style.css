@@ -1,4 +1,4 @@
-/* Ad Advisor AI brand stylesheet — used by write-adadvisor-pdf */
+/* Joud AI brand stylesheet — used by write-joud-pdf */
 
 @page {
   size: Letter;
@@ -18,13 +18,16 @@
 }
 
 :root {
-  --brand-primary: #d946ef;
-  --brand-accent: #f97316;
-  --ink: #0f172a;
-  --ink-soft: #334155;
-  --muted: #64748b;
-  --line: #e2e8f0;
-  --bg-soft: #f8fafc;
+  /* Joud palette (mirrors apps/landing globals.css in the Joud monorepo) */
+  --brand-primary: #B0506A;       /* rose / tertiary — main accent */
+  --brand-accent: #3D1828;        /* deep maroon — primary */
+  --brand-secondary: #7A4558;     /* mauve */
+  --ink: #1A1C1C;
+  --ink-soft: #3D1828;
+  --muted: #7A6E74;
+  --line: #E8E0E3;
+  --bg-soft: #F7F5FA;
+  --bg-muted: #EDEAF4;
 }
 
 * { box-sizing: border-box; }
@@ -33,9 +36,9 @@ html, body {
   margin: 0;
   padding: 0;
   color: var(--ink);
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 10.5pt;
-  line-height: 1.55;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -66,8 +69,8 @@ html, body {
   border-radius: 4px;
 }
 .page-header strong {
-  color: var(--ink);
-  font-weight: 600;
+  color: var(--brand-accent);
+  font-weight: 700;
 }
 
 .page-footer {
@@ -99,9 +102,9 @@ html, body {
   width: 100vw;
   padding: 32mm 22mm 22mm 22mm;
   background:
-    radial-gradient(1200px 600px at 90% -10%, rgba(217, 70, 239, 0.10), transparent 60%),
-    radial-gradient(1000px 500px at -10% 110%, rgba(249, 115, 22, 0.10), transparent 60%),
-    #ffffff;
+    radial-gradient(1200px 600px at 90% -10%, rgba(176, 80, 106, 0.18), transparent 60%),
+    radial-gradient(1000px 500px at -10% 110%, rgba(61, 24, 40, 0.12), transparent 60%),
+    linear-gradient(160deg, #FFFFFF 0%, #F7F5FA 60%, #EDEAF4 100%);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -120,7 +123,7 @@ html, body {
 .cover .top .brand .name {
   font-size: 14pt;
   font-weight: 700;
-  color: var(--ink);
+  color: var(--brand-accent);
   letter-spacing: -0.01em;
 }
 .cover .top .brand .tag {
@@ -143,9 +146,9 @@ html, body {
   margin: 0 0 6px 0;
   font-size: 32pt;
   font-weight: 800;
-  line-height: 1.1;
+  line-height: 1.12;
   letter-spacing: -0.02em;
-  color: var(--ink);
+  color: var(--brand-accent);
 }
 .cover h1 .accent-bar {
   display: inline-block;
@@ -181,7 +184,7 @@ html, body {
 }
 .cover .meta .field .value {
   font-size: 11pt;
-  color: var(--ink);
+  color: var(--brand-accent);
   font-weight: 600;
 }
 
@@ -193,7 +196,7 @@ html, body {
 .cover .bottom .stripe {
   height: 4px;
   width: 100%;
-  background: linear-gradient(90deg, var(--brand-primary), var(--brand-accent));
+  background: linear-gradient(90deg, var(--brand-primary), var(--brand-secondary), var(--brand-accent));
   border-radius: 4px;
   margin-bottom: 12px;
 }
@@ -204,7 +207,7 @@ html, body {
 .body h1 {
   font-size: 20pt;
   font-weight: 800;
-  color: var(--ink);
+  color: var(--brand-accent);
   margin: 22px 0 10px 0;
   letter-spacing: -0.01em;
   page-break-after: avoid;
@@ -212,7 +215,7 @@ html, body {
 .body h2 {
   font-size: 14pt;
   font-weight: 700;
-  color: var(--ink);
+  color: var(--brand-accent);
   margin: 22px 0 8px 0;
   letter-spacing: -0.005em;
   page-break-after: avoid;
@@ -246,35 +249,39 @@ html, body {
 .body a {
   color: var(--brand-primary);
   text-decoration: none;
-  border-bottom: 1px solid rgba(217, 70, 239, 0.3);
+  border-bottom: 1px solid rgba(176, 80, 106, 0.35);
 }
 
-.body strong { color: var(--ink); font-weight: 700; }
+.body strong { color: var(--brand-accent); font-weight: 700; }
 .body em { color: var(--ink-soft); }
 
 .body code {
-  font-family: "SF Mono", "Menlo", "Consolas", monospace;
+  font-family: "JetBrains Mono", "SF Mono", "Menlo", "Consolas", monospace;
   font-size: 9.5pt;
   background: var(--bg-soft);
   border: 1px solid var(--line);
   border-radius: 3px;
   padding: 1px 5px;
-  color: var(--ink);
+  color: var(--brand-accent);
 }
 .body pre {
   background: var(--bg-soft);
   border: 1px solid var(--line);
+  border-left: 3px solid var(--brand-primary);
   border-radius: 6px;
   padding: 10px 12px;
-  font-size: 9.5pt;
+  font-size: 9pt;
   line-height: 1.45;
   overflow-x: auto;
   page-break-inside: avoid;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 .body pre code {
   background: transparent;
   border: 0;
   padding: 0;
+  color: var(--ink);
 }
 
 .body blockquote {
@@ -293,11 +300,11 @@ html, body {
   width: 100%;
   border-collapse: collapse;
   margin: 10px 0 14px 0;
-  font-size: 10pt;
+  font-size: 9.5pt;
   page-break-inside: avoid;
 }
 .body table th {
-  background: var(--ink);
+  background: var(--brand-accent);
   color: #fff;
   text-align: left;
   font-weight: 600;
@@ -318,7 +325,7 @@ html, body {
   margin: 18px 0;
 }
 
-/* AdAdvisor-styled key/value table (use in markdown via raw HTML if desired) */
+/* Joud-styled key/value table (use in markdown via raw HTML if desired) */
 .terms-table {
   width: 100%;
   border-collapse: collapse;
@@ -339,7 +346,7 @@ html, body {
   font-size: 8.5pt;
   font-weight: 600;
 }
-.terms-table td.value { color: var(--ink); font-weight: 500; }
+.terms-table td.value { color: var(--brand-accent); font-weight: 500; }
 
 /* Callout box */
 .callout {

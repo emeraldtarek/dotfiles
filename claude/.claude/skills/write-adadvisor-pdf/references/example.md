@@ -3,7 +3,6 @@ title: Welcome to Ad Advisor AI
 subtitle: A short example document showing the brand layout.
 eyebrow: Internal Brief
 document_kind: Internal Brief
-audience: John Doe
 meta:
   - label: Issued To
     value: John Doe

@@ -8,22 +8,23 @@
 # ]
 # ///
 """
-Render an Ad Advisor AI-branded document.
+Render a Joud AI-branded document.
 
 Input:  a markdown file with optional YAML frontmatter for the cover page.
-Output: <name>.html (self-contained, logo embedded as base64) and <name>.pdf
+Output: <name>.html (self-contained, logo embedded as base64 SVG) and <name>.pdf
         next to the input (or in -o <dir>).
 
 Frontmatter fields (all optional):
-  title          Big title on the cover (defaults to first H1 in the body)
-  subtitle       Smaller line under the title
-  eyebrow        Small uppercase magenta line above the title (default "Ad Advisor AI")
-  brand_name     Header brand name (default "Ad Advisor AI")
-  brand_tag      Tagline under brand name (default "AI-Native Growth, on Autopilot")
-  document_kind  Header label, e.g. "Offer Letter" (default "Document")
-  meta           List of {label, value} dicts for the cover key/value grid
-  footer_note    Cover footer line (default "Ad Advisor AI · Issued <today>")
-  no_cover       If true, skip the cover page entirely
+  title              Big title on the cover (defaults to first H1 in the body)
+  subtitle           Smaller line under the title
+  eyebrow            Small uppercase rose line above the title (default "Joud AI")
+  brand_name         Header brand name (default "Joud AI")
+  brand_tag          Tagline under brand name (default "Voice agents for healthcare")
+  document_kind      Header label, e.g. "Technical Primer" (default "Document")
+  meta               List of {label, value} dicts for the cover key/value grid
+  footer_note        Cover footer line (default "Joud AI · Issued <today>")
+  confidential_line  Running-footer left text (default "Confidential — Joud AI")
+  no_cover           If true, skip the cover page entirely
 
 Usage:
   uv run scripts/render.py path/to/input.md
@@ -46,12 +47,11 @@ import yaml
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 SKILL_DIR = SCRIPT_DIR.parent
-LOGO_PATH = SKILL_DIR / "assets" / "logo.png"
+LOGO_PATH = SKILL_DIR / "assets" / "logo.svg"
 CSS_PATH = SKILL_DIR / "assets" / "style.css"
 
 
 def split_frontmatter(text: str) -> tuple[dict[str, Any], str]:
-    """Pull leading --- ... --- YAML block off a markdown string."""
     if not text.startswith("---"):
         return {}, text
     m = re.match(r"^---\s*\n(.*?)\n---\s*\n?", text, re.DOTALL)
@@ -73,17 +73,14 @@ def encode_logo() -> str:
     if not LOGO_PATH.exists():
         return ""
     data = base64.b64encode(LOGO_PATH.read_bytes()).decode("ascii")
-    return f"data:image/png;base64,{data}"
+    suffix = LOGO_PATH.suffix.lower()
+    mime = "image/svg+xml" if suffix == ".svg" else "image/png"
+    return f"data:{mime};base64,{data}"
 
 
 def render_body(md_body: str) -> str:
     md = markdown.Markdown(
-        extensions=[
-            "extra",          # tables, fenced code, attr_list, etc.
-            "sane_lists",
-            "smarty",
-            "toc",
-        ],
+        extensions=["extra", "sane_lists", "smarty", "toc"],
         output_format="html5",
     )
     return md.convert(md_body)
@@ -106,20 +103,20 @@ def render_meta_grid(meta: list[dict[str, Any]]) -> str:
 def render_cover(fm: dict[str, Any], md_body: str, logo_uri: str) -> tuple[str, str]:
     title = fm.get("title") or extract_first_h1(md_body) or "Untitled"
     subtitle = fm.get("subtitle", "")
-    eyebrow = fm.get("eyebrow", "Ad Advisor AI")
-    brand_name = fm.get("brand_name", "Ad Advisor AI")
-    brand_tag = fm.get("brand_tag", "AI-Native Growth, on Autopilot")
+    eyebrow = fm.get("eyebrow", "Joud AI")
+    brand_name = fm.get("brand_name", "Joud AI")
+    brand_tag = fm.get("brand_tag", "Voice agents for healthcare")
     today = dt.date.today().strftime("%B %d, %Y")
     footer_note = fm.get(
         "footer_note",
-        f"Ad Advisor AI · Issued {today}",
+        f"Joud AI · Issued {today}",
     )
     meta_html = render_meta_grid(fm.get("meta") or [])
 
     cover_html = f"""
 <section class="cover">
   <div class="top">
-    <img src="{logo_uri}" alt="Ad Advisor AI logo">
+    <img src="{logo_uri}" alt="Joud AI logo">
     <div class="brand">
       <div class="name">{html.escape(brand_name)}</div>
       <div class="tag">{html.escape(brand_tag)}</div>
@@ -148,7 +145,8 @@ def build_html(md_text: str, css: str, logo_uri: str) -> tuple[str, str]:
 
     no_cover = bool(fm.get("no_cover"))
     document_kind = html.escape(str(fm.get("document_kind", "Document")))
-    brand_name = html.escape(str(fm.get("brand_name", "Ad Advisor AI")))
+    brand_name = html.escape(str(fm.get("brand_name", "Joud AI")))
+    confidential_line = html.escape(str(fm.get("confidential_line", "Confidential — Joud AI")))
 
     if no_cover:
         cover_html = ""
@@ -167,7 +165,7 @@ def build_html(md_text: str, css: str, logo_uri: str) -> tuple[str, str]:
 
     page_footer = f"""
 <div class="page-footer">
-  <div><span class="accent"></span>Confidential — Ad Advisor AI</div>
+  <div><span class="accent"></span>{confidential_line}</div>
   <div>Page <span class="pageno"></span></div>
 </div>
 """.strip()
@@ -193,7 +191,7 @@ def build_html(md_text: str, css: str, logo_uri: str) -> tuple[str, str]:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Render an AdAdvisor-branded markdown doc to HTML+PDF.")
+    ap = argparse.ArgumentParser(description="Render a Joud-branded markdown doc to HTML+PDF.")
     ap.add_argument("input", help="Path to markdown file")
     ap.add_argument("-o", "--out-dir", help="Output directory (default: alongside input)")
     args = ap.parse_args()

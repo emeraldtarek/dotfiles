@@ -53,6 +53,17 @@ write-adadvisor-pdf/
 - **Add cover meta grid** — set `meta:` list of `{label, value}` items
 - **Change accent color** — edit `assets/style.css` (`--brand-primary`, `--brand-accent`)
 
+## Writing style
+
+- **No em dashes (`—`) in body copy, headings, callouts, or frontmatter.** They get overused and read as noisy. Replace with the punctuation that fits the actual relationship between the clauses:
+  - Light pause / contrast → comma
+  - Elaboration / list intro → colon
+  - Strong sentence break → period + new sentence
+  - Aside / parenthetical → parentheses
+  - Closely related independent clauses → semicolon
+  - Section-header divider (e.g. `Section One: Existing Partners`) → colon, not em dash
+- Hyphens (`-`) and en-dashes (`–`, for numeric ranges like `1–2 years`) are fine. Reach for an em dash only if no other punctuation actually fits, and that should be rare.
+
 ## Notes
 
 - The HTML output is **fully self-contained** (logo embedded as data-URI) — emailable / openable on any machine without the skill folder.

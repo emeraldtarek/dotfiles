@@ -68,6 +68,13 @@
       "TRELLO_TOKEN": "${TRELLO_TOKEN}"
     }
   },
+  "cloudflare-api": {
+    "type": "http",
+    "url": "https://mcp.cloudflare.com/mcp",
+    "headers": {
+      "Authorization": "Bearer ${CLOUDFLARE_API_TOKEN}"
+    }
+  },
   "google-analytics": {
     "command": "pipx",
     "args": ["run", "analytics-mcp"],

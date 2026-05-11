@@ -1,24 +1,26 @@
 {
+  "permissions": {
+    "deny": [
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(**/secrets/**)",
+      "Read(**/credentials.json)",
+      "Read(**/.aws/credentials)",
+      "Read(**/.netrc)",
+      "Read(**/.pgpass)",
+      "Read(**/.ssh/**)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)",
+      "Bash(*cat *.env*)",
+      "Bash(*cat .env*)",
+      "Bash(*printenv*)",
+      "Bash(*security find-generic-password*)",
+      "Bash(*security dump-keychain*)",
+      "Bash(*kc-get*)",
+      "Bash(*from_keychain*)"
+    ]
+  },
   "model": "opus[1m]",
-  "enabledPlugins": {
-    "typescript-lsp@claude-plugins-official": true,
-    "pyright-lsp@claude-plugins-official": true,
-    "lua-lsp@claude-plugins-official": true,
-    "playwright@claude-plugins-official": true,
-    "figma@claude-plugins-official": true
-  },
-  "extraKnownMarketplaces": {
-    "vercel-vercel-plugin": {
-      "source": {
-        "source": "directory",
-        "path": "/Users/tarekkekhia/.cache/plugins/github.com-vercel-vercel-plugin"
-      }
-    }
-  },
-  "effortLevel": "xhigh",
-  "skipDangerousModePermissionPrompt": true,
-  "editorMode": "vim",
-  "voiceEnabled": true,
   "hooks": {
     "PreToolUse": [
       {
@@ -44,25 +46,30 @@
       }
     ]
   },
-  "permissions": {
-    "deny": [
-      "Read(**/.env)",
-      "Read(**/.env.*)",
-      "Read(**/secrets/**)",
-      "Read(**/credentials.json)",
-      "Read(**/.aws/credentials)",
-      "Read(**/.netrc)",
-      "Read(**/.pgpass)",
-      "Read(**/.ssh/**)",
-      "Read(**/*.pem)",
-      "Read(**/*.key)",
-      "Bash(*cat *.env*)",
-      "Bash(*cat .env*)",
-      "Bash(*printenv*)",
-      "Bash(*security find-generic-password*)",
-      "Bash(*security dump-keychain*)",
-      "Bash(*kc-get*)",
-      "Bash(*from_keychain*)"
-    ]
-  }
+  "enabledPlugins": {
+    "typescript-lsp@claude-plugins-official": true,
+    "pyright-lsp@claude-plugins-official": true,
+    "lua-lsp@claude-plugins-official": true,
+    "playwright@claude-plugins-official": true,
+    "figma@claude-plugins-official": true,
+    "cloudflare@cloudflare": true
+  },
+  "extraKnownMarketplaces": {
+    "vercel-vercel-plugin": {
+      "source": {
+        "source": "directory",
+        "path": "/Users/tarekkekhia/.cache/plugins/github.com-vercel-vercel-plugin"
+      }
+    },
+    "cloudflare": {
+      "source": {
+        "source": "github",
+        "repo": "cloudflare/skills"
+      }
+    }
+  },
+  "effortLevel": "xhigh",
+  "skipDangerousModePermissionPrompt": true,
+  "editorMode": "vim",
+  "voiceEnabled": true
 }

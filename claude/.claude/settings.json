@@ -52,7 +52,7 @@
     "lua-lsp@claude-plugins-official": true,
     "playwright@claude-plugins-official": true,
     "figma@claude-plugins-official": true,
-    "cloudflare@cloudflare": true
+    "adadvisor@adadvisor": true
   },
   "extraKnownMarketplaces": {
     "vercel-vercel-plugin": {
@@ -66,10 +66,17 @@
         "source": "github",
         "repo": "cloudflare/skills"
       }
+    },
+    "adadvisor": {
+      "source": {
+        "source": "github",
+        "repo": "AdAdvisor/skills"
+      }
     }
   },
   "effortLevel": "xhigh",
   "skipDangerousModePermissionPrompt": true,
   "editorMode": "vim",
-  "voiceEnabled": true
+  "voiceEnabled": true,
+  "agentPushNotifEnabled": true
 }

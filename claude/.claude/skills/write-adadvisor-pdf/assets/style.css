@@ -268,13 +268,18 @@ html, body {
   padding: 10px 12px;
   font-size: 9.5pt;
   line-height: 1.45;
-  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
   page-break-inside: avoid;
 }
 .body pre code {
   background: transparent;
   border: 0;
   padding: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .body blockquote {
@@ -294,7 +299,12 @@ html, body {
   border-collapse: collapse;
   margin: 10px 0 14px 0;
   font-size: 10pt;
-  page-break-inside: avoid;
+  table-layout: fixed;
+}
+.body table th,
+.body table td {
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .body table th {
   background: var(--ink);
@@ -310,7 +320,13 @@ html, body {
   padding: 8px 10px;
   vertical-align: top;
 }
+.body table tr { page-break-inside: avoid; }
 .body table tr:nth-child(even) td { background: var(--bg-soft); }
+.body table code {
+  white-space: normal;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+}
 
 .body hr {
   border: 0;

@@ -590,3 +590,9 @@ if [ -f '/Users/tarekkekhia/Downloads/google-cloud-sdk/completion.zsh.inc' ]; th
 # multi-leaf repos like iac-adadvisor.
 export TG_PROVIDER_CACHE=1
 export TG_PROVIDER_CACHE_DIR="$HOME/.cache/terragrunt/providers"
+
+# Fetch dependency outputs directly from S3 state instead of running
+# `terraform output` in each dep's .terragrunt-cache. Drops dependency
+# resolution from ~90s to ~5s on multi-dep leaves like ecs/.
+export TG_EXPERIMENT=dependency-fetch-output-from-state
+export TG_DEPENDENCY_FETCH_OUTPUT_FROM_STATE=true

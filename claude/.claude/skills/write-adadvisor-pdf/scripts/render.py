@@ -166,10 +166,8 @@ def build_html(md_text: str, css: str, logo_uri: str) -> tuple[str, str]:
 """.strip()
 
     page_footer = f"""
-<div class="page-footer">
-  <div><span class="accent"></span>Confidential — Ad Advisor AI</div>
-  <div>Page <span class="pageno"></span></div>
-</div>
+<div class="page-footer"><span class="accent"></span>Confidential · Ad Advisor AI</div>
+<div class="page-footer-right">Page <span class="pageno"></span></div>
 """.strip()
 
     full_html = f"""<!DOCTYPE html>

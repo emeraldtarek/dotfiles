@@ -10,11 +10,15 @@
   @bottom-left {
     content: element(pageFooter);
   }
+  @bottom-right {
+    content: element(pageFooterRight);
+  }
 }
 @page :first {
   margin: 0;
   @top-left { content: none; }
   @bottom-left { content: none; }
+  @bottom-right { content: none; }
 }
 
 :root {
@@ -70,16 +74,19 @@ html, body {
   font-weight: 600;
 }
 
-.page-footer {
-  position: running(pageFooter);
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+.page-footer,
+.page-footer-right {
   padding-top: 6px;
-  border-top: 1px solid var(--line);
   font-size: 8.5pt;
   color: var(--muted);
+}
+.page-footer {
+  position: running(pageFooter);
+  text-align: left;
+}
+.page-footer-right {
+  position: running(pageFooterRight);
+  text-align: right;
 }
 .page-footer .accent {
   height: 2px;

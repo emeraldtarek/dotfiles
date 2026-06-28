@@ -25,7 +25,7 @@ mkdir -p "$HOME/tf-mirror"
 
 # ── Stow packages ─────────────────────────────────────────────────
 echo "Stowing dotfiles..."
-for pkg in nvim tmux zsh git claude direnv; do
+for pkg in nvim tmux zsh git claude direnv ssh; do
     # Back up existing files that would conflict with stow
     for f in $(stow --no --verbose --target="$HOME" "$pkg" 2>&1 | grep "existing target" | sed 's/.*: //'); do
         if [ -e "$HOME/$f" ] && [ ! -L "$HOME/$f" ]; then
@@ -36,6 +36,40 @@ for pkg in nvim tmux zsh git claude direnv; do
     stow --restow --target="$HOME" "$pkg"
     echo "  stowed $pkg"
 done
+
+# ── SSH config (remote dev) ───────────────────────────────────────
+# The `ssh` package stows ~/.ssh/config.d/dev.conf. We do NOT stow ~/.ssh/config
+# itself (it's often a real, machine-specific file) — instead we make sure it
+# Includes our drop-in + the untracked config.local, prepending so first-match
+# precedence works as intended.
+mkdir -p "$HOME/.ssh" && chmod 700 "$HOME/.ssh"
+touch "$HOME/.ssh/config" && chmod 600 "$HOME/.ssh/config"
+if ! grep -q 'config.d/\*.conf' "$HOME/.ssh/config"; then
+    # Back up the original before prepending Include lines (content is otherwise
+    # preserved verbatim — we only add two lines at the top).
+    if [ -s "$HOME/.ssh/config" ] && [ ! -f "$HOME/.ssh/config.pre-dotfiles.backup" ]; then
+        cp "$HOME/.ssh/config" "$HOME/.ssh/config.pre-dotfiles.backup"
+        echo "  backed up ~/.ssh/config → ~/.ssh/config.pre-dotfiles.backup"
+    fi
+    { printf 'Include ~/.ssh/config.local\nInclude ~/.ssh/config.d/*.conf\n\n'; \
+      cat "$HOME/.ssh/config"; } > "$HOME/.ssh/config.tmp"
+    mv "$HOME/.ssh/config.tmp" "$HOME/.ssh/config"
+    chmod 600 "$HOME/.ssh/config"
+    echo "  added Include lines to ~/.ssh/config"
+fi
+if [ ! -f "$HOME/.ssh/config.local" ]; then
+    cat > "$HOME/.ssh/config.local" <<'EOF'
+# Machine-specific SSH hosts (not tracked in git).
+# Shared `dev` options (Port 443, ControlMaster, keepalives) live in
+# ~/.ssh/config.d/dev.conf — only put your VPS specifics here:
+#
+# Host dev
+#     HostName 203.0.113.10
+#     User tarek
+EOF
+    chmod 600 "$HOME/.ssh/config.local"
+    echo "Created ~/.ssh/config.local template (fill in your VPS)"
+fi
 
 # ── Oh My Zsh ──────────────────────────────────────────────────────
 if [ ! -d "$HOME/.oh-my-zsh" ]; then

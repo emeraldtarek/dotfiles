@@ -596,3 +596,48 @@ export TG_PROVIDER_CACHE_DIR="$HOME/.cache/terragrunt/providers"
 # resolution from ~90s to ~5s on multi-dep leaves like ecs/.
 export TG_EXPERIMENT=dependency-fetch-output-from-state
 export TG_DEPENDENCY_FETCH_OUTPUT_FROM_STATE=true
+
+# ── Remote dev over SSH (VPS) ─────────────────────────────────────
+# nvim/tmux/Claude run on the VPS; these run on the CLIENT (this Mac) and pipe
+# the VPS's dev ports back to your local localhost — the nvim equivalent of
+# VS Code's automatic port forwarding. Companion to the `dev` host in
+# ~/.ssh/config (set HostName/User in ~/.ssh/config.local). Harmless on the VPS.
+
+# Connect to the VPS dev session over Eternal Terminal (survives drops/roaming,
+# TCP so it slips through travel networks). Falls back to plain ssh.
+dev() {
+    local host=${1:-dev}
+    if command -v et &>/dev/null; then et "$host"; else ssh "$host"; fi
+}
+
+# Forward one VPS port to the same port on localhost, injected into the live
+# ControlMaster connection — no reconnect, your tmux/nvim session is untouched.
+#   fwd 3000     ·     unfwd 3000     ([host] defaults to `dev`)
+fwd()   { ssh -O forward -L "${1}:localhost:${1}" "${2:-dev}" && echo "→ localhost:${1}"; }
+unfwd() { ssh -O cancel  -L "${1}:localhost:${1}" "${2:-dev}" && echo "✗ localhost:${1}"; }
+
+# Auto-forwarder: poll the VPS for listening dev ports and forward each new one
+# automatically (and drop forwards when the server stops). Run it once in a
+# spare local terminal tab and leave it — every `npm run dev` / compose port
+# just appears on your Mac's localhost.   dev-forward [host] [low] [high]
+dev-forward() {
+    local host=${1:-dev} lo=${2:-3000} hi=${3:-9999}
+    typeset -A on
+    trap 'for p in ${(k)on}; do ssh -O cancel -L "$p:localhost:$p" "$host" 2>/dev/null; done; print "\n✗ tore down forwards"; return 0' INT
+    print "watching $host for listening ports in ${lo}-${hi} … (Ctrl-C to stop)"
+    while true; do
+        local now
+        now=$(ssh "$host" 'ss -Htln 2>/dev/null || /usr/sbin/ss -Htln 2>/dev/null' \
+              | awk '{n=split($4,a,":"); print a[n]}' | sort -un)
+        for p in ${(f)now}; do
+            [[ "$p" == <-> ]] || continue          # numeric only
+            (( p >= lo && p <= hi )) || continue
+            [[ -n ${on[$p]} ]] && continue
+            ssh -O forward -L "$p:localhost:$p" "$host" 2>/dev/null && { on[$p]=1; print "→ localhost:$p"; }
+        done
+        for p in ${(k)on}; do
+            print -r -- "$now" | grep -qx "$p" || { ssh -O cancel -L "$p:localhost:$p" "$host" 2>/dev/null; unset "on[$p]"; print "✗ localhost:$p"; }
+        done
+        sleep 1
+    done
+}

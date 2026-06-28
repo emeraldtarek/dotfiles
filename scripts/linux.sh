@@ -78,6 +78,21 @@ if ! command -v gh &>/dev/null; then
     sudo apt-get install -y gh
 fi
 
+# ── Eternal Terminal (resilient SSH: survives drops, carries port tunnels) ──
+# TCP-based (unlike mosh's UDP, which travel/Syria networks often throttle).
+# The `et` package ships both the client and an etserver systemd unit on :2022.
+if ! command -v et &>/dev/null; then
+    echo "Installing Eternal Terminal..."
+    if grep -qi ubuntu /etc/os-release 2>/dev/null; then
+        sudo add-apt-repository -y ppa:jgmath2000/et
+        sudo apt-get update
+        sudo apt-get install -y et
+    else
+        echo "  non-Ubuntu detected — install et from the Debian repo:"
+        echo "  https://github.com/MisterTea/EternalTerminal#debian"
+    fi
+fi
+
 # ── JetBrains Mono Nerd Font ─────────────────────────────────────
 FONT_DIR="$HOME/.local/share/fonts"
 if [ ! -f "$FONT_DIR/JetBrainsMonoNerdFont-Regular.ttf" ]; then

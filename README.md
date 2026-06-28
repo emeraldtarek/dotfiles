@@ -28,8 +28,9 @@ The install script:
 | `zsh/` | Yes | Zsh config → `~/.zshrc` |
 | `git/` | Yes | Git config → `~/.gitconfig`, `~/.gitignore_global` |
 | `claude/` | Yes | Claude Code config → `~/.claude/` (settings, skills, MCP servers) |
+| `ssh/` | Yes | SSH drop-in → `~/.ssh/config.d/dev.conf` (remote dev VPS) |
 | `iterm2/` | No | iTerm2 color scheme (imported during install) |
-| `scripts/` | No | OS-specific install scripts |
+| `scripts/` | No | OS-specific install + `vps-harden.sh` |
 
 ## Neovim Plugins
 
@@ -77,3 +78,33 @@ The install script is idempotent — safe to run again at any time:
 ```bash
 cd ~/.dotfiles && ./install.sh
 ```
+
+## Remote Dev (VPS)
+
+Develop on a cloud VPS over SSH — nvim, tmux and Claude Code run on the box; your
+laptop is just a terminal + a window onto the VPS's `localhost`. Designed to work
+from restrictive/travel networks (no Tailscale, no UDP) by riding SSH on 443.
+
+**On the VPS** (fresh Debian/Ubuntu):
+
+```bash
+git clone <repo-url> ~/.dotfiles && cd ~/.dotfiles && ./install.sh   # installs et
+sudo ./scripts/vps-harden.sh                                         # sshd on 443 + et server
+```
+
+**On your Mac:** fill in `~/.ssh/config.local` (`HostName` + `User` for `Host dev`),
+then:
+
+| Command | What it does |
+|---------|--------------|
+| `dev` | Connect to the VPS over Eternal Terminal (survives drops/roaming; falls back to `ssh`). Run `tmux` / `ts <proj>` inside it. |
+| `dev-forward` | Auto-forwarder — watches the VPS and forwards every new listening dev port (3000–9999) to your Mac's localhost. The nvim equivalent of VS Code's port forwarding. Leave it running in a spare tab. |
+| `fwd 3000` / `unfwd 3000` | Manually forward/drop a single port into the live connection (no reconnect). |
+
+So `npm run dev` or `docker compose up` on the VPS shows up at `http://localhost:3000`
+on your Mac, exactly like local. The shared `dev` SSH options (Port 443,
+ControlMaster, keepalives) live in `ssh/.ssh/config.d/dev.conf`; only your VPS's
+host/user go in the untracked `~/.ssh/config.local`.
+
+> For public URLs (webhooks, mobile testing, demos) put Caddy + a Cloudflare
+> Tunnel in front of the VPS — separate from this SSH-localhost path.

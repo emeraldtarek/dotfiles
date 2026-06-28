@@ -1,5 +1,5 @@
 DOTFILES_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-STOW_PKGS := nvim tmux zsh git claude duckdb direnv
+STOW_PKGS := nvim tmux zsh git claude duckdb direnv ssh
 
 .PHONY: help stow restow unstow install env mcp skills
 .DEFAULT_GOAL := help

@@ -641,3 +641,8 @@ dev-forward() {
         sleep 1
     done
 }
+
+# Quick public URL for a VPS port via an ephemeral Cloudflare tunnel (no domain,
+# no config). URL changes each run — good for a one-off share, not webhooks.
+# Run ON THE VPS (this .zshrc is stowed there too):  share 3000
+share() { cloudflared tunnel --url "http://localhost:${1:-3000}"; }

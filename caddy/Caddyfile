@@ -1,0 +1,34 @@
+# Caddy reverse proxy for remote dev — deployed to /etc/caddy/Caddyfile by
+# scripts/vps-tunnel.sh. Cloudflare terminates TLS and the tunnel forwards
+# plaintext HTTP here, with the original Host header, so we route by hostname.
+#
+# Only reachable via the tunnel (binds localhost:8080), which forwards only
+# *.dev.<zone> and hooks.<zone> — so the Host is always inside your zone.
+{
+	auto_https off          # Cloudflare does TLS at the edge
+	admin off
+	log {
+		output stderr
+		level WARN
+	}
+}
+
+:8080 {
+	# ── Auto route: pNNNN.dev.<zone> → 127.0.0.1:NNNN ──────────────────
+	# Zero config per project. Start a server on any port, open
+	# https://p<port>.dev.<zone>. Access (your email) gates who can reach it.
+	@port header_regexp port Host ^p(\d{2,5})\.dev\.
+	handle @port {
+		reverse_proxy 127.0.0.1:{http.regexp.port.1}
+	}
+
+	# ── Named routes + webhook host ────────────────────────────────────
+	# Pretty URLs for specific projects, generated on the VPS (not tracked,
+	# since hostnames are machine-specific). Reload: sudo systemctl reload caddy
+	import /etc/caddy/named.caddy
+
+	# ── Fallthrough ────────────────────────────────────────────────────
+	handle {
+		respond "no caddy route for {host}" 404
+	}
+}

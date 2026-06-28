@@ -29,8 +29,10 @@ The install script:
 | `git/` | Yes | Git config → `~/.gitconfig`, `~/.gitignore_global` |
 | `claude/` | Yes | Claude Code config → `~/.claude/` (settings, skills, MCP servers) |
 | `ssh/` | Yes | SSH drop-in → `~/.ssh/config.d/dev.conf` (remote dev VPS) |
+| `caddy/` | No | Caddy reverse-proxy config (deployed to the VPS by `vps-tunnel.sh`) |
+| `cloudflared/` | No | Cloudflare Tunnel ingress template (real config generated on the VPS) |
 | `iterm2/` | No | iTerm2 color scheme (imported during install) |
-| `scripts/` | No | OS-specific install + `vps-harden.sh` |
+| `scripts/` | No | OS-specific install + `vps-harden.sh` + `vps-tunnel.sh` |
 
 ## Neovim Plugins
 
@@ -106,5 +108,34 @@ on your Mac, exactly like local. The shared `dev` SSH options (Port 443,
 ControlMaster, keepalives) live in `ssh/.ssh/config.d/dev.conf`; only your VPS's
 host/user go in the untracked `~/.ssh/config.local`.
 
-> For public URLs (webhooks, mobile testing, demos) put Caddy + a Cloudflare
-> Tunnel in front of the VPS — separate from this SSH-localhost path.
+### Public URLs (webhooks · mobile · demos)
+
+Secondary to the SSH path — for the things localhost can't do: webhook callbacks
+(Stripe/Twilio/Meta), testing on your phone, OAuth redirects, sharing. A
+**Cloudflare named tunnel** (outbound-only — no inbound ports on the VPS) fronts
+a **Caddy** reverse proxy that routes subdomains to local ports.
+
+```
+sender / phone / client ──https──► Cloudflare ──tunnel──► cloudflared ──► Caddy :8080 ──► localhost:3000
+```
+
+**Setup** (on the VPS, needs a domain on Cloudflare):
+
+```bash
+./scripts/vps-tunnel.sh your-zone.com     # installs caddy + cloudflared, creates tunnel, wires DNS
+# then add one Cloudflare Access app for *.dev.your-zone.com (the script prints exact steps)
+```
+
+**Using it:**
+
+| URL | Routes to | Notes |
+|-----|-----------|-------|
+| `https://p3000.dev.zone` | `localhost:3000` | **Any port, zero config** — just open `p<port>.dev.zone`. |
+| `https://name.dev.zone` | a named port | Add pretty routes in `/etc/caddy/named.caddy` → `sudo systemctl reload caddy`. |
+| `https://hooks.zone` | webhook target | **Not** behind Access so Stripe/Twilio/Meta reach it — verify signatures in-app. |
+| `share 3000` (on VPS) | ephemeral `*.trycloudflare.com` | No domain/config; URL changes each run. One-off shares only. |
+
+**Access** locks `*.dev.zone` to your email (Cloudflare Zero Trust, free), so dev
+apps aren't open to the world. `hooks.zone` stays public by design. From inside
+Syria these Cloudflare-fronted URLs may be flaky — but they're mostly hit by
+*external* senders/devices, and your own previewing uses the SSH-localhost path.

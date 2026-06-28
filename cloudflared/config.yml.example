@@ -1,0 +1,17 @@
+# Template only. scripts/vps-tunnel.sh writes the real file to
+# ~/.cloudflared/config.yml with USER / TUNNEL_ID / ZONE filled in.
+#
+# The tunnel dials OUT to Cloudflare — no inbound ports open on the VPS.
+tunnel: dev
+credentials-file: /home/USER/.cloudflared/TUNNEL_ID.json
+ingress:
+  # Webhooks: deliberately NOT behind Cloudflare Access (Stripe/Twilio/Meta
+  # can't authenticate) — verify the sender's signature in your app instead.
+  - hostname: hooks.ZONE
+    service: http://localhost:8080
+  # Everything else dev — protect *.dev.ZONE with Access (your email) in the
+  # Cloudflare Zero Trust dashboard.
+  - hostname: "*.dev.ZONE"
+    service: http://localhost:8080
+  # Default: refuse anything not matched above.
+  - service: http_status:404

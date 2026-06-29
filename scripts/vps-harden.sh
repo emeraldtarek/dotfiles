@@ -12,7 +12,9 @@
 set -e
 
 echo "→ sshd: add :443 listener (keep :22)…"
-if systemctl is-enabled ssh.socket &>/dev/null; then
+# Detect socket-activated ssh (Ubuntu 22.10+): is-active is reliable here,
+# is-enabled can report "alias"/non-zero even when the socket owns the ports.
+if systemctl is-active --quiet ssh.socket; then
     # Socket-activated ssh (Ubuntu 22.10+): Port in sshd_config is ignored.
     sudo mkdir -p /etc/systemd/system/ssh.socket.d
     sudo tee /etc/systemd/system/ssh.socket.d/99-remote-dev.conf >/dev/null <<'EOF'

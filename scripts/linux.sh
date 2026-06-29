@@ -26,7 +26,12 @@ sudo apt-get install -y --no-install-recommends \
 # ── Neovim (tarball from GitHub releases) ─────────────────────────
 # PPA is stuck on 0.9.x; tarball gives latest stable with no deps
 NVIM_MIN_VERSION="0.11"
-NVIM_INSTALL_DIR="/opt/nvim-linux-x86_64"
+case "$(uname -m)" in
+    x86_64|amd64)  NVIM_ARCH="x86_64" ;;
+    aarch64|arm64) NVIM_ARCH="arm64"  ;;
+    *) echo "  ! unknown arch $(uname -m), defaulting to x86_64"; NVIM_ARCH="x86_64" ;;
+esac
+NVIM_INSTALL_DIR="/opt/nvim-linux-${NVIM_ARCH}"
 
 needs_nvim_install() {
     if ! command -v nvim &>/dev/null; then
@@ -38,14 +43,14 @@ needs_nvim_install() {
 }
 
 if needs_nvim_install; then
-    echo "Installing Neovim..."
+    echo "Installing Neovim (${NVIM_ARCH})..."
     sudo apt-get remove -y neovim 2>/dev/null || true
-    curl -fsSL -o /tmp/nvim-linux-x86_64.tar.gz \
-        https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz
+    curl -fsSL -o "/tmp/nvim-linux-${NVIM_ARCH}.tar.gz" \
+        "https://github.com/neovim/neovim/releases/latest/download/nvim-linux-${NVIM_ARCH}.tar.gz"
     sudo rm -rf "$NVIM_INSTALL_DIR"
-    sudo tar -C /opt -xzf /tmp/nvim-linux-x86_64.tar.gz
+    sudo tar -C /opt -xzf "/tmp/nvim-linux-${NVIM_ARCH}.tar.gz"
     sudo ln -sf "$NVIM_INSTALL_DIR/bin/nvim" /usr/local/bin/nvim
-    rm /tmp/nvim-linux-x86_64.tar.gz
+    rm "/tmp/nvim-linux-${NVIM_ARCH}.tar.gz"
     echo "  installed $(nvim --version | head -1)"
 else
     echo "Neovim already installed: $(nvim --version | head -1)"
@@ -63,6 +68,24 @@ if ! fnm list 2>/dev/null | grep -q "v[0-9]"; then
     echo "Installing Node.js LTS via fnm..."
     eval "$(fnm env --shell bash)"
     fnm install --lts
+fi
+
+# ── Docker (your `docker compose up` dev flow) ────────────────────
+# Official repo; works on both Ubuntu and Debian via $ID/$VERSION_CODENAME.
+if ! command -v docker &>/dev/null; then
+    echo "Installing Docker..."
+    DISTRO_ID=$(. /etc/os-release && echo "$ID")              # ubuntu | debian
+    DISTRO_CODENAME=$(. /etc/os-release && echo "$VERSION_CODENAME")
+    sudo install -m 0755 -d /etc/apt/keyrings
+    curl -fsSL "https://download.docker.com/linux/${DISTRO_ID}/gpg" \
+        | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+    sudo chmod a+r /etc/apt/keyrings/docker.gpg
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/${DISTRO_ID} ${DISTRO_CODENAME} stable" \
+        | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+    sudo apt-get update
+    sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+    sudo usermod -aG docker "$USER"
+    echo "  Docker installed — run 'newgrp docker' or re-login for the group to apply"
 fi
 
 # ── GitHub CLI ────────────────────────────────────────────────────

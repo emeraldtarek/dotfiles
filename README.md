@@ -87,7 +87,10 @@ Develop on a cloud VPS over SSH — nvim, tmux and Claude Code run on the box; y
 laptop is just a terminal + a window onto the VPS's `localhost`. Designed to work
 from restrictive/travel networks (no Tailscale, no UDP) by riding SSH on 443.
 
-**On the VPS** (fresh Debian/Ubuntu):
+> **Full step-by-step runbook (with verify gates + lockout rescue):
+> [docs/VPS-SETUP.md](docs/VPS-SETUP.md).** The quick version:
+
+**On the VPS** (fresh Ubuntu 24.04, amd64):
 
 ```bash
 git clone <repo-url> ~/.dotfiles && cd ~/.dotfiles && ./install.sh   # installs et

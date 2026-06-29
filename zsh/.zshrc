@@ -610,11 +610,17 @@ dev() {
     if command -v et &>/dev/null; then et "$host"; else ssh "$host"; fi
 }
 
-# Forward one VPS port to the same port on localhost, injected into the live
-# ControlMaster connection — no reconnect, your tmux/nvim session is untouched.
+# Ensure a background SSH master to $1 exists (ET sessions don't create one).
+_dev_master() { ssh -O check "$1" 2>/dev/null || ssh -fN "$1"; }
+
+# Forward one VPS port to the same port on localhost, injected into the SSH
+# master — no reconnect, your tmux/nvim/ET session is untouched.
 #   fwd 3000     ·     unfwd 3000     ([host] defaults to `dev`)
-fwd()   { ssh -O forward -L "${1}:localhost:${1}" "${2:-dev}" && echo "→ localhost:${1}"; }
-unfwd() { ssh -O cancel  -L "${1}:localhost:${1}" "${2:-dev}" && echo "✗ localhost:${1}"; }
+fwd() {
+    local p=$1 h=${2:-dev}
+    _dev_master "$h" && ssh -O forward -L "$p:localhost:$p" "$h" && print "→ localhost:$p"
+}
+unfwd() { ssh -O cancel -L "${1}:localhost:${1}" "${2:-dev}" && print "✗ localhost:${1}"; }
 
 # Auto-forwarder: poll the VPS for listening dev ports and forward each new one
 # automatically (and drop forwards when the server stops). Run it once in a
@@ -623,6 +629,7 @@ unfwd() { ssh -O cancel  -L "${1}:localhost:${1}" "${2:-dev}" && echo "✗ local
 dev-forward() {
     local host=${1:-dev} lo=${2:-3000} hi=${3:-9999}
     typeset -A on
+    _dev_master "$host" || { print "can't reach $host"; return 1; }
     trap 'for p in ${(k)on}; do ssh -O cancel -L "$p:localhost:$p" "$host" 2>/dev/null; done; print "\n✗ tore down forwards"; return 0' INT
     print "watching $host for listening ports in ${lo}-${hi} … (Ctrl-C to stop)"
     while true; do

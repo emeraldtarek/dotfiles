@@ -638,7 +638,7 @@ dev-forward() {
     local host=${1:-dev} lo=${2:-3000} hi=${3:-9999}
     typeset -A on
     _dev_master "$host" || { print "can't reach $host"; return 1; }
-    trap 'for p in ${(k)on}; do ssh -O cancel -L "$p:localhost:$p" "$host" 2>/dev/null; done; print "\n✗ tore down forwards"; return 0' INT
+    trap 'for p in ${(k)on}; do ssh -O cancel -L "$p:localhost:$p" "$host" 2>/dev/null; done; print "\n✗ tore down forwards"; return 0' INT TERM HUP
     print "watching $host for listening ports in ${lo}-${hi} … (Ctrl-C to stop)"
     while true; do
         local now

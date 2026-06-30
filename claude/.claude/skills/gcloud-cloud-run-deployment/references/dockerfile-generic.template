@@ -1,0 +1,34 @@
+# syntax=docker/dockerfile:1.7
+# Generic Cloud Run Dockerfile for Node/Bun apps that aren't Next.js.
+# Adapt the build step and CMD to your app's needs.
+
+FROM oven/bun:1.2.22 AS deps
+WORKDIR /app
+COPY package.json bun.lock* ./
+RUN bun install --frozen-lockfile
+
+FROM oven/bun:1.2.22 AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+# Remove this line if your app has no build step.
+RUN bun run build
+
+FROM node:22-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV=production \
+    PORT=8080 \
+    HOSTNAME=0.0.0.0
+
+RUN addgroup --system --gid 1001 nodejs \
+ && adduser --system --uid 1001 appuser
+
+# Copy only what's needed at runtime. Adjust for your build output layout.
+COPY --from=builder --chown=appuser:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=appuser:nodejs /app/dist ./dist
+COPY --from=builder --chown=appuser:nodejs /app/package.json ./package.json
+
+USER appuser
+EXPOSE 8080
+# TODO: replace with your app's entrypoint.
+CMD ["node", "dist/index.js"]

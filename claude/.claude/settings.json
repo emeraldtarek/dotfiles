@@ -20,7 +20,7 @@
       "Bash(*from_keychain*)"
     ]
   },
-  "model": "opus[1m]",
+  "model": "opus",
   "hooks": {
     "PreToolUse": [
       {
@@ -46,13 +46,28 @@
       }
     ]
   },
+  "workflowKeywordTriggerEnabled": false,
   "enabledPlugins": {
     "typescript-lsp@claude-plugins-official": true,
     "pyright-lsp@claude-plugins-official": true,
     "lua-lsp@claude-plugins-official": true,
     "playwright@claude-plugins-official": true,
     "figma@claude-plugins-official": true,
-    "adadvisor@adadvisor": true
+    "adadvisor@adadvisor": true,
+    "deploy-on-aws@claude-plugins-official": true,
+    "aws-serverless@claude-plugins-official": true,
+    "databases-on-aws@claude-plugins-official": true,
+    "aws-dev-toolkit@claude-plugins-official": true,
+    "aws-amplify@claude-plugins-official": true,
+    "aws-core@claude-plugins-official": true,
+    "aws-agents@claude-plugins-official": true,
+    "aws-data-analytics@claude-plugins-official": true,
+    "stitch-build@google-labs-code-stitch-skills": true,
+    "stitch-design@google-labs-code-stitch-skills": true,
+    "stitch-utilities@google-labs-code-stitch-skills": true,
+    "motion-framer@claude-design-skillstack": true,
+    "twilio-developer-kit@twilio": true,
+    "internal-tooling@adadvisor-internal": true
   },
   "extraKnownMarketplaces": {
     "vercel-vercel-plugin": {
@@ -72,11 +87,38 @@
         "source": "github",
         "repo": "AdAdvisor/skills"
       }
+    },
+    "sanity-agent-toolkit": {
+      "source": {
+        "source": "github",
+        "repo": "sanity-io/agent-toolkit"
+      }
+    },
+    "claude-design-skillstack": {
+      "source": {
+        "source": "github",
+        "repo": "freshtechbro/claudedesignskills"
+      }
+    },
+    "twilio": {
+      "source": {
+        "source": "github",
+        "repo": "twilio/ai"
+      }
+    },
+    "adadvisor-internal": {
+      "source": {
+        "source": "github",
+        "repo": "AdAdvisor/internal-tooling"
+      }
     }
   },
   "effortLevel": "xhigh",
+  "tui": "fullscreen",
   "skipDangerousModePermissionPrompt": true,
+  "skipWorkflowUsageWarning": true,
   "editorMode": "vim",
-  "voiceEnabled": true,
-  "agentPushNotifEnabled": true
+  "autoCompactEnabled": true,
+  "agentPushNotifEnabled": true,
+  "voiceEnabled": true
 }

@@ -1,0 +1,31 @@
+# Cloud Build config — builds + pushes one image.
+# Invoked by deploy.sh; not run directly.
+#
+# Placeholders to replace at scaffold time:
+#   {{SERVICE_NAME}} — Cloud Run service + Artifact Registry repo name
+
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-f'
+      - 'Dockerfile'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/{{SERVICE_NAME}}/{{SERVICE_NAME}}:${_TAG}'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/{{SERVICE_NAME}}/{{SERVICE_NAME}}:latest'
+      - '.'
+
+images:
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/{{SERVICE_NAME}}/{{SERVICE_NAME}}:${_TAG}'
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/{{SERVICE_NAME}}/{{SERVICE_NAME}}:latest'
+
+options:
+  machineType: 'E2_HIGHCPU_8'
+  logging: CLOUD_LOGGING_ONLY
+
+substitutions:
+  _REGION: 'northamerica-northeast1'
+  _TAG: 'manual'                      # overridden by deploy.sh with git short sha
+
+timeout: '1200s'

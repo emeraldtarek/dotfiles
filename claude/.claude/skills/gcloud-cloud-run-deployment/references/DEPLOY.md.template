@@ -1,0 +1,68 @@
+# Deploying {{SERVICE_NAME}}
+
+This service deploys to GCP Cloud Run via Cloud Build, authenticated from
+GitHub Actions through Workload Identity Federation. The bootstrap script
+(in the `gcloud-cloud-run-deployment` skill) provisions everything; this
+runbook documents day-to-day operations.
+
+## Manual deploy
+
+```bash
+./deploy.sh
+```
+
+Honors:
+- `REGION=us-central1 ./deploy.sh` — override region (default `{{REGION}}`)
+- `PREVIEW_TAG=pr-42 ./deploy.sh` — preview revision (no traffic)
+
+## CI/CD
+
+- **`.github/workflows/deploy.yml`** — push to `main` deploys to prod. Manual `workflow_dispatch` also available.
+- **`.github/workflows/pr.yml`** — every PR runs `lint` + `type-check`, then deploys a preview revision to a tagged Cloud Run URL (no traffic). Comments the URL back on the PR. Cleanup runs automatically when the PR closes.
+
+## Required GitHub Variables
+
+(Settings → Secrets and variables → Actions → **Variables** tab.)
+
+| Name | Value |
+|---|---|
+| `GCP_PROJECT_ID` | The GCP project ID |
+| `GCP_DEPLOYER_SA` | `gh-actions-deployer@<PROJECT_ID>.iam.gserviceaccount.com` |
+| `GCP_WORKLOAD_IDENTITY_PROVIDER` | `projects/<PROJECT_NUMBER>/locations/global/workloadIdentityPools/github-pool/providers/github-provider` |
+
+These are non-sensitive (project IDs, SA emails, WIF provider paths) — that's why they're Variables, not Secrets.
+
+## Custom domain (optional)
+
+```bash
+gcloud run domain-mappings create \
+  --service={{SERVICE_NAME}} \
+  --domain=your-domain.com \
+  --region={{REGION}}
+```
+
+Follow the DNS records gcloud prints.
+
+## Troubleshooting
+
+When a deploy fails or the deployed service misbehaves, **read the skill's
+`gotchas.md` first**. The seven most common failure modes (missing `public/`
+copy, traffic stuck on prior revision, DSS blocking public access, WIF
+auth rejected, etc.) are documented there with exact symptom → fix pairs.
+
+Location: `~/Documents/dotfiles/claude/.claude/skills/gcloud-cloud-run-deployment/references/gotchas.md`
+
+## Rotating / extending
+
+- **Adding a runtime env var:** edit `deploy.sh`, add `--set-env-vars=KEY=VAL` to the `gcloud run deploy` block, redeploy.
+- **Adding a runtime secret:**
+  ```bash
+  echo -n "VALUE" | gcloud secrets create my-secret --data-file=-
+  PROJECT_ID=$(gcloud config get-value project)
+  PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format='value(projectNumber)')
+  gcloud secrets add-iam-policy-binding my-secret \
+    --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
+    --role="roles/secretmanager.secretAccessor"
+  ```
+  Then add `--update-secrets=ENV_VAR=my-secret:latest` to `deploy.sh`.
+- **Build-time `NEXT_PUBLIC_*` vars:** add `ARG` declarations to the Dockerfile builder stage, add `--build-arg` to `cloudbuild.yaml`, pass via `--substitutions` from `deploy.sh`.

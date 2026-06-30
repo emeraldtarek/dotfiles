@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+# Deploy {{SERVICE_NAME}} to Google Cloud Run.
+#
+# Usage:
+#   ./deploy.sh                       # prod deploy (push traffic to latest)
+#   PREVIEW_TAG=pr-42 ./deploy.sh     # preview deploy (tagged revision, no traffic)
+#
+# Placeholders to replace at scaffold time:
+#   {{SERVICE_NAME}} — Cloud Run service name (also Artifact Registry repo name)
+#   {{REGION}}       — default GCP region (overridable via REGION= env var)
+
+set -euo pipefail
+
+SERVICE="{{SERVICE_NAME}}"
+REGION="${REGION:-{{REGION}}}"
+
+PROJECT="$(gcloud config get-value project 2>/dev/null || true)"
+if [[ -z "${PROJECT}" ]]; then
+  echo "ERROR: No gcloud project set. Run: gcloud config set project <id>" >&2
+  exit 1
+fi
+
+IMAGE="${REGION}-docker.pkg.dev/${PROJECT}/${SERVICE}/${SERVICE}:latest"
+
+TAG="$(git rev-parse --short=7 HEAD 2>/dev/null || echo manual)"
+if ! git diff --quiet HEAD 2>/dev/null; then
+  TAG="${TAG}-dirty"
+fi
+
+echo "=================================================================="
+echo "[1/2] Cloud Build → ${IMAGE}"
+echo "=================================================================="
+# --region pins the build worker to ${REGION}. Without it, Cloud Build
+# uses the "global" worker pool which can execute anywhere — breaks data
+# residency. See gotchas.md #2.
+gcloud builds submit \
+  --config cloudbuild.yaml \
+  --region "${REGION}" \
+  --substitutions="_REGION=${REGION},_TAG=${TAG}" \
+  --project "${PROJECT}" \
+  .
+
+echo ""
+echo "=================================================================="
+echo "[2/2] Cloud Run deploy → ${SERVICE}"
+echo "=================================================================="
+
+EXTRA=()
+if [[ -n "${PREVIEW_TAG:-}" ]]; then
+  EXTRA+=(--tag "${PREVIEW_TAG}" --no-traffic)
+fi
+
+gcloud run deploy "${SERVICE}" \
+  --image "${IMAGE}" \
+  --region "${REGION}" \
+  --project "${PROJECT}" \
+  --allow-unauthenticated \
+  --port 8080 \
+  --memory 512Mi \
+  --cpu 1 \
+  --min-instances 0 \
+  --max-instances 10 \
+  --execution-environment gen2 \
+  --quiet \
+  "${EXTRA[@]}"
+
+# Prod deploys: explicitly pin traffic to LATEST. Without this, after any
+# prior --no-traffic deploy (PR preview), traffic stays frozen on a
+# specific revision name and subsequent prod deploys keep creating new
+# revisions that never receive traffic. `gcloud run deploy` has no
+# --traffic flag, so we issue a follow-up update-traffic call.
+# See gotchas.md #3.
+if [[ -z "${PREVIEW_TAG:-}" ]]; then
+  gcloud run services update-traffic "${SERVICE}" \
+    --region "${REGION}" \
+    --project "${PROJECT}" \
+    --to-latest \
+    --quiet
+fi
+
+echo ""
+echo "URL:"
+gcloud run services describe "${SERVICE}" \
+  --region "${REGION}" \
+  --project "${PROJECT}" \
+  --format="value(status.url)"

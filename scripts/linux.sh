@@ -58,10 +58,10 @@ fi
 
 # ── fnm (Fast Node Manager) ──────────────────────────────────────
 # Replaces NodeSource PPA — no apt conflicts, userspace install
+export PATH="$HOME/.local/share/fnm:$PATH"
 if ! command -v fnm &>/dev/null; then
     echo "Installing fnm..."
     curl -fsSL https://fnm.vercel.app/install | bash -s -- --skip-shell
-    export PATH="$HOME/.local/share/fnm:$PATH"
 fi
 
 if ! fnm list 2>/dev/null | grep -q "v[0-9]"; then
@@ -69,6 +69,12 @@ if ! fnm list 2>/dev/null | grep -q "v[0-9]"; then
     eval "$(fnm env --shell bash)"
     fnm install --lts
 fi
+
+# Make the LTS the default so `node`/`npm` are active in every new shell — fnm
+# initializes a shell to the `default` alias; without it, node only activates
+# on `cd` into a project. (This is why a fresh `zsh` showed "npm: not found".)
+eval "$(fnm env --shell bash)" 2>/dev/null || true
+fnm default lts-latest 2>/dev/null || fnm alias lts-latest default 2>/dev/null || true
 
 # ── Docker (your `docker compose up` dev flow) ────────────────────
 # Official repo; works on both Ubuntu and Debian via $ID/$VERSION_CODENAME.

@@ -1,0 +1,140 @@
+name: PR — checks + preview
+
+# Every PR: lint + type-check → preview deploy to a tagged Cloud Run
+# revision (no traffic) → sticky comment with the preview URL.
+# When the PR closes, remove the tag.
+#
+# Placeholders to replace at scaffold time:
+#   {{SERVICE_NAME}} — Cloud Run service name
+#   {{REGION}}       — GCP region
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+concurrency:
+  # One preview per PR — cancel earlier in-flight runs so we don't deploy
+  # a stale revision over a fresh one.
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  # ────────────────────────────────────────────────────────────────────
+  # Lint + type-check
+  # ────────────────────────────────────────────────────────────────────
+  checks:
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.2.22'
+      - run: bun install --frozen-lockfile
+      - run: bun run lint
+      - run: bun run type-check
+
+  # ────────────────────────────────────────────────────────────────────
+  # Preview deploy
+  # ────────────────────────────────────────────────────────────────────
+  preview:
+    needs: checks
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    environment:
+      name: preview
+      url: ${{ steps.url.outputs.url }}
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write   # for the sticky comment
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SA }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+
+      - name: Deploy preview
+        env:
+          PREVIEW_TAG: pr-${{ github.event.pull_request.number }}
+        run: ./deploy.sh
+
+      - name: Resolve preview URL
+        id: url
+        env:
+          PR_TAG: pr-${{ github.event.pull_request.number }}
+        run: |
+          url=$(gcloud run services describe {{SERVICE_NAME}} \
+            --region={{REGION}} \
+            --format=json \
+            | jq -r --arg tag "$PR_TAG" '.status.traffic[] | select(.tag==$tag) | .url')
+          echo "url=$url" >> $GITHUB_OUTPUT
+
+      - name: Comment URL on PR
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: preview
+          message: |
+            **Preview** ready: ${{ steps.url.outputs.url }}
+            (tagged revision, no traffic — auto-cleans when this PR closes)
+
+  # ────────────────────────────────────────────────────────────────────
+  # Cleanup on PR close
+  # ────────────────────────────────────────────────────────────────────
+  cleanup:
+    if: github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      deployments: write
+    steps:
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SA }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+
+      - name: Remove preview tag
+        run: |
+          PR_TAG=pr-${{ github.event.pull_request.number }}
+          # --remove-tags is a no-op if the tag doesn't exist on this
+          # service, so no need to check first.
+          gcloud run services update-traffic {{SERVICE_NAME}} \
+            --region={{REGION}} \
+            --remove-tags="$PR_TAG" \
+            --quiet || true
+
+      - name: Deactivate GitHub preview deployment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const sha = context.payload.pull_request.head.sha;
+            const { data: deps } = await github.rest.repos.listDeployments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              environment: 'preview',
+              sha,
+            });
+            for (const dep of deps) {
+              await github.rest.repos.createDeploymentStatus({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                deployment_id: dep.id,
+                state: 'inactive',
+                description: 'PR closed',
+              });
+            }

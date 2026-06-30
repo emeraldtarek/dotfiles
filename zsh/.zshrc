@@ -12,9 +12,17 @@ export ZSH="$HOME/.oh-my-zsh"
 
 export PATH="$HOME/.local/bin:$PATH"
 
-# fnm (Fast Node Manager) — used on Linux; no-op if not installed
+# fnm (Fast Node Manager) — installed on Linux to ~/.local/share/fnm with
+# --skip-shell, so its bin dir isn't on PATH for fresh shells; add it, then
+# activate the *default* node version so `node`/`npm` resolve everywhere (not
+# just after `cd` into a project with a .node-version).
+for _fnm_dir in "$HOME/.local/share/fnm" "$HOME/.fnm"; do
+    [ -d "$_fnm_dir" ] && export PATH="$_fnm_dir:$PATH" && break
+done
+unset _fnm_dir
 if command -v fnm &>/dev/null; then
     eval "$(fnm env --use-on-cd --shell zsh)"
+    fnm use default &>/dev/null || true
 fi
 
 export EDITOR="nvim"

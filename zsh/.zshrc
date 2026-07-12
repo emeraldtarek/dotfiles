@@ -698,3 +698,23 @@ dev-forward() {
 # no config). URL changes each run — good for a one-off share, not webhooks.
 # Run ON THE VPS (this .zshrc is stowed there too):  share 3000
 share() { cloudflared tunnel --url "http://localhost:${1:-3000}"; }
+
+# Screenshot → VPS bridge. Claude Code on the VPS can't reach your Mac's
+# clipboard, but it CAN read an image by path. So: screenshot to the clipboard
+# (⌘⇧⌃4), run `clip`, then ⌘V the path it copies into Claude Code and hit Enter.
+# Ships the image over the existing `dev` SSH master (fast, no reconnect).
+#   clip            → /home/tarek/.clip/clip-2026….png  (path on your clipboard)
+clip() {
+    command -v pngpaste >/dev/null || { print "pngpaste missing → brew install pngpaste"; return 1; }
+    local host=${1:-dev}
+    local tmp; tmp=$(mktemp -t clip).png
+    pngpaste "$tmp" 2>/dev/null || { rm -f "$tmp"; print "no image on clipboard (⌘⇧⌃4 to grab one)"; return 1; }
+    _dev_master "$host" || { rm -f "$tmp"; print "can't reach $host"; return 1; }
+    local dir; dir=$(ssh "$host" 'd=$HOME/.clip; mkdir -p "$d"; echo "$d"')
+    local name=clip-$(date +%Y%m%d-%H%M%S).png
+    if scp -q "$tmp" "$host:$dir/$name"; then
+        print -n "$dir/$name" | pbcopy
+        print "→ $host:$dir/$name  (path copied — ⌘V into Claude Code, then Enter)"
+    fi
+    rm -f "$tmp"
+}

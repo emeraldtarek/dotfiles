@@ -105,6 +105,16 @@ npx create-next-app@latest app && cd app && npm run dev
 ```
 💻 With `dev-forward` running, open **http://localhost:3000** — the VPS app on your local browser. Edit in nvim on the VPS; HMR updates locally. Done.
 
+### Pasting screenshots into Claude Code
+
+Claude Code runs on the VPS, so a terminal `⌘V` only sends **text** — it can't reach your Mac's clipboard image. But Claude Code *reads images by path*, so bridge the clipboard to a file on the VPS:
+
+💻 Screenshot to the clipboard (`⌘⇧⌃4`), then:
+```bash
+clip             # ships the clipboard image to dev:~/.clip/ and copies the remote path
+```
+Now `⌘V` in Claude Code pastes `/home/tarek/.clip/clip-….png` — hit Enter and Claude reads it. Needs `pngpaste` on the Mac (in the Brewfile; `brew install pngpaste`). The image rides the existing `dev` SSH master, so it's instant.
+
 ## 8. 🖥️ (Optional) Public URLs — webhooks / mobile / demos
 
 Needs a domain on Cloudflare:

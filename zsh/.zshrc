@@ -578,6 +578,43 @@ kc-import() {
     echo "Next: direnv allow"
 }
 
+# Resolve every `keychain_export VAR KC_NAME` line in a .envrc into a literal
+# `export VAR=value` line, pulling each value out of macOS Keychain. Useful
+# for producing a flat, fully-resolved env file from a keychain-backed .envrc.
+#
+#   kc-resolve-envrc                       # uses ./.envrc, prints to stdout
+#   kc-resolve-envrc .envrc > .env.local   # write to a file
+kc-resolve-envrc() {
+    local envrc="${1:-.envrc}"
+    local direnvrc="$HOME/.config/direnv/direnvrc"
+
+    if [[ ! -f "$envrc" ]]; then
+        echo "Error: $envrc not found" >&2
+        return 1
+    fi
+    if [[ ! -f "$direnvrc" ]]; then
+        echo "Error: $direnvrc not found (defines keychain_export/from_keychain)" >&2
+        return 1
+    fi
+
+    source "$direnvrc"
+
+    local line var_name kc_name value esc_value
+    while IFS= read -r line; do
+        [[ "$line" =~ ^[[:space:]]*keychain_export[[:space:]]+([A-Za-z_][A-Za-z0-9_]*)[[:space:]]+([A-Za-z0-9_-]+) ]] || continue
+        var_name="${match[1]}"
+        kc_name="${match[2]}"
+
+        if ! value="$(from_keychain "$kc_name")"; then
+            echo "Error: could not resolve '$kc_name' (for $var_name) from Keychain — run: kc-set $kc_name" >&2
+            return 1
+        fi
+
+        esc_value=${value//\'/\'\\\'\'}
+        printf "export %s='%s'\n" "$var_name" "$esc_value"
+    done < "$envrc"
+}
+
 # Machine-specific overrides (API keys, local paths, etc.)
 [ -f ~/.zshrc.local ] && source ~/.zshrc.local
 
@@ -626,7 +663,7 @@ _dev_master() { ssh -O check "$1" 2>/dev/null || ssh -fN "$1"; }
 #   fwd 3000     ·     unfwd 3000     ([host] defaults to `dev`)
 fwd() {
     local p=$1 h=${2:-dev}
-    _dev_master "$h" && ssh -O forward -L "$p:localhost:$p" "$h" && print "→ localhost:$p"
+    _dev_master "$h" && ssh -O forward -L "${p}:localhost:${p}" "$h" && print "→ localhost:$p"
 }
 unfwd() { ssh -O cancel -L "${1}:localhost:${1}" "${2:-dev}" && print "✗ localhost:${1}"; }
 
@@ -638,20 +675,20 @@ dev-forward() {
     local host=${1:-dev} lo=${2:-3000} hi=${3:-9999}
     typeset -A on
     _dev_master "$host" || { print "can't reach $host"; return 1; }
-    trap 'for p in ${(k)on}; do ssh -O cancel -L "$p:localhost:$p" "$host" 2>/dev/null; done; print "\n✗ tore down forwards"; return 0' INT TERM HUP
+    trap 'for p in ${(k)on}; do ssh -O cancel -L "${p}:localhost:${p}" "$host" 2>/dev/null; done; print "\n✗ tore down forwards"; return 0' INT TERM HUP
     print "watching $host for listening ports in ${lo}-${hi} … (Ctrl-C to stop)"
+    local now
     while true; do
-        local now
         now=$(ssh "$host" 'ss -Htln 2>/dev/null || /usr/sbin/ss -Htln 2>/dev/null' \
               | awk '{n=split($4,a,":"); print a[n]}' | sort -un)
         for p in ${(f)now}; do
             [[ "$p" == <-> ]] || continue          # numeric only
             (( p >= lo && p <= hi )) || continue
             [[ -n ${on[$p]} ]] && continue
-            ssh -O forward -L "$p:localhost:$p" "$host" 2>/dev/null && { on[$p]=1; print "→ localhost:$p"; }
+            ssh -O forward -L "${p}:localhost:${p}" "$host" 2>/dev/null && { on[$p]=1; print "→ localhost:$p"; }
         done
         for p in ${(k)on}; do
-            print -r -- "$now" | grep -qx "$p" || { ssh -O cancel -L "$p:localhost:$p" "$host" 2>/dev/null; unset "on[$p]"; print "✗ localhost:$p"; }
+            print -r -- "$now" | grep -qx "$p" || { ssh -O cancel -L "${p}:localhost:${p}" "$host" 2>/dev/null; unset "on[$p]"; print "✗ localhost:$p"; }
         done
         sleep 1
     done

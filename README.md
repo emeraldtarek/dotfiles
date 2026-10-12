@@ -5,19 +5,29 @@ Personal dev environment managed with [GNU Stow](https://www.gnu.org/software/st
 ## Quick Start
 
 ```bash
-git clone <repo-url> ~/.dotfiles
-cd ~/.dotfiles
-chmod +x install.sh
-./install.sh
+git clone <repo-url> ~/Documents/dotfiles
+cd ~/Documents/dotfiles && ./install.sh
 ```
 
-The install script:
-1. Installs packages via Homebrew (macOS) or apt (Linux)
-2. Uses `stow --restow` to symlink config packages into `$HOME`
-3. Installs Oh My Zsh + zsh-vi-mode plugin
-4. Installs TPM and tmux plugins
-5. Creates `~/.zshrc.local` and `~/.gitconfig-local` templates for machine-specific settings
-6. Sets zsh as default shell
+`install.sh` installs packages (Homebrew/apt), symlinks the packages into `$HOME`,
+sets up Oh My Zsh, tmux and Claude Code plugins, creates the untracked
+`~/.zshrc.local` and `~/.gitconfig-local`, and makes zsh the default shell. It's
+safe to re-run any time.
+
+## Common Commands
+
+Run these from the repo, or from anywhere as `dotfiles <target>` (e.g. `dotfiles restow`),
+an alias for `make -C ~/Documents/dotfiles`. Plain `dotfiles` lists the targets.
+
+| Command | What it does |
+|---------|--------------|
+| `./install.sh` | Full bootstrap; safe to re-run |
+| `make restow` | Re-link all packages after adding or removing files, then run `make mcp` |
+| `make stow` / `make unstow` | Link / unlink all packages |
+| `make env` | Add env vars from `env.example` that `~/.zshrc.local` is missing |
+| `make mcp` | Merge `claude/mcp-servers.json` into `~/.claude.json` and apply `CLAUDE_TOOLING_PREFER` |
+| `make skills` | Refresh vendored Claude skills from upstream (`SKILL=name` for one) |
+| `./install-claude.sh .claude-ad` | Set up an extra Claude profile in `~/.claude-ad` (see [Claude Code](#claude-code)) |
 
 ## Structure
 
@@ -33,6 +43,43 @@ The install script:
 | `cloudflared/` | No | Cloudflare Tunnel ingress template (real config generated on the VPS) |
 | `iterm2/` | No | iTerm2 color scheme (imported during install) |
 | `scripts/` | No | OS-specific install + `vps-harden.sh` + `vps-tunnel.sh` |
+
+## Machine-Specific Config
+
+Untracked files, created on first install:
+
+- **`~/.zshrc.local`**: env vars, API keys, local PATHs. After `make env`, fill in the values, then `source ~/.zshrc.local`.
+- **`~/.gitconfig-local`**: `includeIf` blocks for work repos.
+
+## Claude Code
+
+The `claude/` package links settings, hooks and skills into `~/.claude`. MCP servers
+live in `claude/mcp-servers.json` and read their keys from `~/.zshrc.local`.
+
+**Profiles.** Extra config dirs get the same settings, skills and MCP servers:
+
+```bash
+./install-claude.sh .claude-ad                           # set up ~/.claude-ad
+alias claude-ad="CLAUDE_CONFIG_DIR=~/.claude-ad claude"  # add to ~/.zshrc.local
+```
+
+**dotfiles vs. the internal-tooling plugin.** Some skills and MCP servers also ship in
+the AdAdvisor `internal-tooling` plugin. `CLAUDE_TOOLING_PREFER` in `~/.zshrc.local`
+picks which copy is used:
+
+- `dotfiles` (default): this repo's copies.
+- `internal-tooling`: the plugin's copies. Its secrets are filled in from the matching
+  env vars; a server that still needs other options keeps the dotfiles copy.
+
+To switch, edit the value, `source ~/.zshrc.local`, then re-run `make restow` and
+`./install-claude.sh <profile>` for each profile.
+
+**Update the plugin** (per profile; drop `CLAUDE_CONFIG_DIR` for `~/.claude`):
+
+```bash
+CLAUDE_CONFIG_DIR=~/.claude-ad claude plugin marketplace update adadvisor-internal
+CLAUDE_CONFIG_DIR=~/.claude-ad claude plugin update internal-tooling@adadvisor-internal
+```
 
 ## Neovim Plugins
 
@@ -55,31 +102,6 @@ The install script:
 ### LSP Servers (via Mason)
 
 ts_ls, html, cssls, tailwindcss, svelte, lua_ls, graphql, emmet_ls, prismals, pyright
-
-## Environment Variables
-
-Required env vars (API keys, tokens, etc.) are listed in `env.example`. After cloning:
-
-```bash
-make env            # scaffolds missing vars into ~/.zshrc.local
-vim ~/.zshrc.local  # fill in values
-source ~/.zshrc.local
-```
-
-## Machine-Specific Config
-
-Files not tracked in git — created as templates on first install:
-
-- **`~/.zshrc.local`** — env vars, API keys, local PATHs (Pulumi, LM Studio, etc.)
-- **`~/.gitconfig-local`** — `includeIf` blocks for work repos
-
-## Re-running
-
-The install script is idempotent — safe to run again at any time:
-
-```bash
-cd ~/.dotfiles && ./install.sh
-```
 
 ## Remote Dev (VPS)
 

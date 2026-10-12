@@ -8,27 +8,29 @@ help:
 	@echo "Usage: dotfiles <command>"
 	@echo ""
 	@echo "Commands:"
-	@echo "  stow      Symlink packages into ~"
-	@echo "  restow    Re-symlink packages (use after adding skills, etc.)"
+	@echo "  stow      Symlink packages into ~ (then runs mcp)"
+	@echo "  restow    Re-symlink packages (use after adding skills, etc.; then runs mcp)"
 	@echo "  unstow    Remove all symlinks"
 	@echo "  env       Scaffold missing env vars into ~/.zshrc.local"
-	@echo "  mcp       Merge MCP servers into ~/.claude.json"
+	@echo "  mcp       Merge MCP servers into ~/.claude.json and apply CLAUDE_TOOLING_PREFER"
 	@echo "  skills    Refresh vendored skills from upstream (SKILL=name for one)"
 	@echo "  install   Full machine bootstrap"
 
 stow:
-	@mkdir -p $(HOME)/.claude
+	@mkdir -p $(HOME)/.claude/skills
 	@for pkg in $(STOW_PKGS); do \
 		stow --target="$(HOME)" -d "$(DOTFILES_DIR)" $$pkg; \
 		echo "  stowed $$pkg"; \
 	done
+	@$(MAKE) --no-print-directory mcp
 
 restow:
-	@mkdir -p $(HOME)/.claude
+	@mkdir -p $(HOME)/.claude/skills
 	@for pkg in $(STOW_PKGS); do \
 		stow --restow --target="$(HOME)" -d "$(DOTFILES_DIR)" $$pkg; \
 		echo "  restowed $$pkg"; \
 	done
+	@$(MAKE) --no-print-directory mcp
 
 unstow:
 	@for pkg in $(STOW_PKGS); do \
@@ -37,12 +39,8 @@ unstow:
 	done
 
 mcp:
-	@if [ ! -f $(HOME)/.claude.json ]; then echo '{}' > $(HOME)/.claude.json; fi
-	@jq -s '.[0].mcpServers = ((.[0].mcpServers // {}) * .[1]) | .[0]' \
-		$(HOME)/.claude.json \
-		$(DOTFILES_DIR)/claude/mcp-servers.json > $(HOME)/.claude.json.tmp \
-		&& mv $(HOME)/.claude.json.tmp $(HOME)/.claude.json
-	@echo "Merged MCP servers into ~/.claude.json"
+	@if ! command -v jq >/dev/null; then echo "Skipping MCP servers (jq not installed)"; \
+	else bash "$(DOTFILES_DIR)/claude/scripts/sync-profile.sh" "$(HOME)/.claude"; fi
 
 env:
 	@touch $(HOME)/.zshrc.local
@@ -52,8 +50,9 @@ env:
 			\#*|"") continue ;; \
 		esac; \
 		if ! grep -q "^export $$key=" $(HOME)/.zshrc.local; then \
-			echo "export $$key=" >> $(HOME)/.zshrc.local; \
-			echo "  added $$key (needs value)"; \
+			echo "export $$key=$$value" >> $(HOME)/.zshrc.local; \
+			if [ -n "$$value" ]; then echo "  added $$key=$$value (default)"; \
+			else echo "  added $$key (needs value)"; fi; \
 			added=$$((added + 1)); \
 		fi; \
 	done < $(DOTFILES_DIR)/env.example; \

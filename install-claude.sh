@@ -25,7 +25,8 @@ TARGET="${TARGET%/}"
 STOW_ARGS=(--dir="$DOTFILES_DIR/claude" --target="$TARGET" --ignore='\.DS_Store' --ignore='\.gitkeep')
 
 # Pre-create so stow links contents rather than folding the dir itself
-mkdir -p "$TARGET"
+# (skills/ too, so sync-profile.sh can unlink single skills)
+mkdir -p "$TARGET/skills"
 
 echo "Stowing claude → $TARGET"
 
@@ -55,19 +56,14 @@ EOF
     echo "Created $TARGET/settings.local.json template"
 fi
 
-# ── MCP servers ────────────────────────────────────────────────────
+# ── MCP servers + internal-tooling overlaps ────────────────────────
 # User-scope MCP servers live in $CLAUDE_CONFIG_DIR/.claude.json. Merge ours
-# in (repo definitions win on name clashes; other servers are kept).
-CLAUDE_JSON="$TARGET/.claude.json"
+# in (repo definitions win on name clashes; other servers are kept), then
+# apply CLAUDE_TOOLING_PREFER to what the internal-tooling plugin also ships.
 if ! command -v jq &> /dev/null; then
     echo "Skipping MCP servers (jq not installed)"
 else
-    [ -f "$CLAUDE_JSON" ] || echo '{}' > "$CLAUDE_JSON"
-    jq -s '.[0].mcpServers = ((.[0].mcpServers // {}) * .[1]) | .[0]' \
-        "$CLAUDE_JSON" "$DOTFILES_DIR/claude/mcp-servers.json" > "$CLAUDE_JSON.tmp"
-    chmod 600 "$CLAUDE_JSON.tmp"
-    mv "$CLAUDE_JSON.tmp" "$CLAUDE_JSON"
-    echo "Merged MCP servers into $CLAUDE_JSON"
+    bash "$DOTFILES_DIR/claude/scripts/sync-profile.sh" "$TARGET"
 fi
 
 echo ""

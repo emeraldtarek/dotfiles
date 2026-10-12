@@ -14,7 +14,7 @@ elif [[ "$OSTYPE" == linux-gnu* ]]; then
 fi
 
 # ── Pre-stow: ensure directories exist to prevent tree folding ────
-mkdir -p "$HOME/.claude"
+mkdir -p "$HOME/.claude/skills"
 
 # ── Tool cache dirs ────────────────────────────────────────────────
 # Terragrunt provider cache (referenced by TG_PROVIDER_CACHE_DIR in zsh/.zshrc)
@@ -117,6 +117,11 @@ if command -v claude &> /dev/null; then
     echo "  done"
 else
     echo "Skipping Claude Code plugins (claude not installed)"
+fi
+
+# MCP servers + skills shared with the internal-tooling plugin (CLAUDE_TOOLING_PREFER)
+if command -v jq &> /dev/null; then
+    bash "$DOTFILES_DIR/claude/scripts/sync-profile.sh"
 fi
 
 if [ ! -f "$HOME/.claude/settings.local.json" ]; then

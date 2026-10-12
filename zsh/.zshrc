@@ -28,6 +28,7 @@ fi
 export EDITOR="nvim"
 
 alias updateclaude='rm -rf /opt/homebrew/lib/node_modules/@anthropic-ai/claude-code && npm i -g @anthropic-ai/claude-code'
+alias nosleep='caffeinate -dims'
 
 ts() {
     # Function to print usage

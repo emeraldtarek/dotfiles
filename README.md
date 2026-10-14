@@ -74,6 +74,20 @@ picks which copy is used:
 To switch, edit the value, `source ~/.zshrc.local`, then re-run `make restow` and
 `./install-claude.sh <profile>` for each profile.
 
+**Skills.** Every skill lives in `claude/.claude/skills/` and gets linked into each
+profile's `skills/`. Skills copied from other repos are listed in
+`claude/scripts/skills-sources.tsv` (repo, ref, path in repo, folder name), and
+`make skills` copies them back from upstream. That overwrites local edits, so a skill
+you've edited stays out of the manifest. Skills not in the manifest are never touched.
+
+- Update all: `make skills`. Update one: `make skills SKILL=tdd`. Review with `git diff`.
+- Add one: add a row, run `make skills SKILL=<name>`, then `make restow` (and
+  `./install-claude.sh <profile>` for each profile) to link the new folder.
+- [mattpocock/skills](https://github.com/mattpocock/skills): every engineering skill,
+  plus `grilling` and `writing-for-agents`, which they call. Run
+  `/setup-matt-pocock-skills` once per repo. His `code-review` takes over
+  `/code-review`, and the built-in one is still at `/review`.
+
 **Update the plugin** (per profile; drop `CLAUDE_CONFIG_DIR` for `~/.claude`):
 
 ```bash

@@ -57,16 +57,26 @@ while IFS=$'\t' read -r repo ref subpath dest || [[ -n "${repo:-}" ]]; do
 
   echo "→ $dest  ($repo @ $ref ⇐ $subpath)"
 
-  workdir="$tmp_root/$dest"
-  if ! git clone --depth 1 --branch "$ref" --quiet "$repo" "$workdir" 2>/dev/null; then
+  # One checkout per repo@ref, shared by every row that uses it.
+  workdir="$tmp_root/$(printf '%s@%s' "$repo" "$ref" | cksum | cut -d' ' -f1)"
+  if [[ -e "$workdir.failed" ]]; then
+    echo "  ✗ skipped, $repo @ $ref failed earlier" >&2
+    failed=$((failed+1))
+    continue
+  fi
+  if [[ ! -d "$workdir" ]] \
+      && ! git clone --depth 1 --branch "$ref" --quiet "$repo" "$workdir" 2>/dev/null; then
     rm -rf "$workdir"
     if ! git clone --quiet "$repo" "$workdir"; then
       echo "  ✗ clone failed" >&2
+      touch "$workdir.failed"
       failed=$((failed+1))
       continue
     fi
     if ! git -C "$workdir" checkout --quiet "$ref"; then
       echo "  ✗ checkout '$ref' failed" >&2
+      rm -rf "$workdir"
+      touch "$workdir.failed"
       failed=$((failed+1))
       continue
     fi

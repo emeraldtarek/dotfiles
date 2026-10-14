@@ -5,3 +5,29 @@
 #   subpath  path inside the repo to copy (use "." if the repo root is the skill)
 #   dest     directory name under claude/.claude/skills/
 https://github.com/anthropics/skills.git	main	skills/mcp-builder	mcp-builder
+
+# mattpocock/skills: every engineering skill, plus the productivity skills they
+# call (grilling: grill-with-docs, improve-codebase-architecture, triage, wayfinder;
+# writing-for-agents: retro). Run /setup-matt-pocock-skills once per repo first.
+https://github.com/mattpocock/skills.git	main	skills/engineering/ask-matt	ask-matt
+https://github.com/mattpocock/skills.git	main	skills/engineering/code-review	code-review
+https://github.com/mattpocock/skills.git	main	skills/engineering/codebase-design	codebase-design
+https://github.com/mattpocock/skills.git	main	skills/engineering/diagnosing-bugs	diagnosing-bugs
+https://github.com/mattpocock/skills.git	main	skills/engineering/domain-modeling	domain-modeling
+https://github.com/mattpocock/skills.git	main	skills/engineering/grill-with-docs	grill-with-docs
+https://github.com/mattpocock/skills.git	main	skills/engineering/implement	implement
+https://github.com/mattpocock/skills.git	main	skills/engineering/implement-spec	implement-spec
+https://github.com/mattpocock/skills.git	main	skills/engineering/improve-codebase-architecture	improve-codebase-architecture
+https://github.com/mattpocock/skills.git	main	skills/engineering/pr	pr
+https://github.com/mattpocock/skills.git	main	skills/engineering/prototype	prototype
+https://github.com/mattpocock/skills.git	main	skills/engineering/research	research
+https://github.com/mattpocock/skills.git	main	skills/engineering/retro	retro
+https://github.com/mattpocock/skills.git	main	skills/engineering/setup-matt-pocock-skills	setup-matt-pocock-skills
+https://github.com/mattpocock/skills.git	main	skills/engineering/tdd	tdd
+https://github.com/mattpocock/skills.git	main	skills/engineering/to-spec	to-spec
+https://github.com/mattpocock/skills.git	main	skills/engineering/to-tickets	to-tickets
+https://github.com/mattpocock/skills.git	main	skills/engineering/triage	triage
+https://github.com/mattpocock/skills.git	main	skills/engineering/wayfinder	wayfinder
+https://github.com/mattpocock/skills.git	main	skills/engineering/wizard	wizard
+https://github.com/mattpocock/skills.git	main	skills/productivity/grilling	grilling
+https://github.com/mattpocock/skills.git	main	skills/productivity/writing-for-agents	writing-for-agents

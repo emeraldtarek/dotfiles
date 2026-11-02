@@ -29,6 +29,8 @@ export EDITOR="nvim"
 
 alias updateclaude='rm -rf /opt/homebrew/lib/node_modules/@anthropic-ai/claude-code && npm i -g @anthropic-ai/claude-code'
 alias nosleep='caffeinate -dims'
+alias lidawake='sudo pmset -a disablesleep 1 && echo "Lid close will NOT sleep the Mac. Run lidsleep to undo."'
+alias lidsleep='sudo pmset -a disablesleep 0 && echo "Normal sleep restored."'
 
 ts() {
     # Function to print usage

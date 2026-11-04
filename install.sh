@@ -114,6 +114,8 @@ if command -v claude &> /dev/null; then
     claude plugin install typescript-lsp@claude-plugins-official 2>/dev/null || true
     claude plugin install pyright-lsp@claude-plugins-official 2>/dev/null || true
     claude plugin install sanity-plugin@sanity-agent-toolkit 2>/dev/null || true
+    claude plugin marketplace add google/elephant-goldfish-model 2>/dev/null || true
+    claude plugin install egm@egm 2>/dev/null || true
     echo "  done"
 else
     echo "Skipping Claude Code plugins (claude not installed)"

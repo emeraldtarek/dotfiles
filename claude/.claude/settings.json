@@ -67,7 +67,8 @@
     "stitch-utilities@google-labs-code-stitch-skills": true,
     "motion-framer@claude-design-skillstack": true,
     "twilio-developer-kit@twilio": true,
-    "internal-tooling@adadvisor-internal": true
+    "internal-tooling@adadvisor-internal": true,
+    "egm@egm": true
   },
   "extraKnownMarketplaces": {
     "vercel-vercel-plugin": {
@@ -110,6 +111,12 @@
       "source": {
         "source": "github",
         "repo": "AdAdvisor/internal-tooling"
+      }
+    },
+    "egm": {
+      "source": {
+        "source": "github",
+        "repo": "google/elephant-goldfish-model"
       }
     }
   },

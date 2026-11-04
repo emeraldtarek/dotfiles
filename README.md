@@ -88,6 +88,12 @@ you've edited stays out of the manifest. Skills not in the manifest are never to
   `/setup-matt-pocock-skills` once per repo. His `code-review` takes over
   `/code-review`, and the built-in one is still at `/review`.
 
+**Elephant-Goldfish Model.** [google/elephant-goldfish-model](https://github.com/google/elephant-goldfish-model)
+is installed as the `egm@egm` plugin (marketplace and enable flag in `settings.json`),
+not vendored, because its skills read the reviewer agents and templates bundled with
+the plugin. Commands are `/egm:egm-brainstorm`, `/egm:egm-draft`, `/egm:egm-review`,
+`/egm:egm-resolve`, `/egm:egm-review-loop`, `/egm:egm-bootstrap` and `/egm:egm-drift-report`.
+
 **Update the plugin** (per profile; drop `CLAUDE_CONFIG_DIR` for `~/.claude`):
 
 ```bash

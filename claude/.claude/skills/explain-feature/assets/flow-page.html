@@ -1,0 +1,440 @@
+<title>EXAMPLE Password Reset</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+/* Layout: a wiring diagram of one path. Flow diagrams top to bottom, a step inspector beside each; colour says WHO does a step. */
+:root {
+  --bg: #f1f3f6; --surface: #ffffff; --soft: #f6f8fa; --ink: #17202a; --muted: #5b6673; --line: #d2d8df; --edge: #7a8693;
+  --code: #48535f; --code-bg: #eceff3;
+  --person: #25303b; --person-fg: #f4f6f8;
+  --a1: #94570a; --a1-bg: #fbf0dc;
+  --a2: #6a3ea6; --a2-bg: #f0e9fa;
+  --a3: #1d5ea8; --a3-bg: #e5eef9;
+  --a4: #0a7265; --a4-bg: #dff2ee;
+  --a5: #a3306a; --a5-bg: #fae8f1;
+  --flag: #b5382c;
+  --f-display: "Space Grotesk", "Avenir Next", system-ui, sans-serif;
+  --f-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0e1319; --surface: #151c24; --soft: #111821; --ink: #e3e9ef; --muted: #95a2af; --line: #2b3641; --edge: #71808d;
+  --code: #aab6c2; --code-bg: #1d2630;
+  --person: #d6dee6; --person-fg: #10161c;
+  --a1: #e4a65a; --a1-bg: #36270f;
+  --a2: #b892ea; --a2-bg: #2a1f3d;
+  --a3: #84b0e6; --a3-bg: #172638;
+  --a4: #5cc4b4; --a4-bg: #102e2a;
+  --a5: #ec8fbb; --a5-bg: #3a1829;
+  --flag: #ef7164;
+  color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --bg: #0e1319; --surface: #151c24; --soft: #111821; --ink: #e3e9ef; --muted: #95a2af; --line: #2b3641; --edge: #71808d;
+  --code: #aab6c2; --code-bg: #1d2630;
+  --person: #d6dee6; --person-fg: #10161c;
+  --a1: #e4a65a; --a1-bg: #36270f;
+  --a2: #b892ea; --a2-bg: #2a1f3d;
+  --a3: #84b0e6; --a3-bg: #172638;
+  --a4: #5cc4b4; --a4-bg: #102e2a;
+  --a5: #ec8fbb; --a5-bg: #3a1829;
+  --flag: #ef7164;
+  color-scheme: dark;
+}
+/* one slot per actor: --k is its ink, --k-bg its fill */
+.s-code { --k: var(--code); --k-bg: var(--code-bg); }
+.s-a1 { --k: var(--a1); --k-bg: var(--a1-bg); } .s-a2 { --k: var(--a2); --k-bg: var(--a2-bg); }
+.s-a3 { --k: var(--a3); --k-bg: var(--a3-bg); } .s-a4 { --k: var(--a4); --k-bg: var(--a4-bg); }
+.s-a5 { --k: var(--a5); --k-bg: var(--a5-bg); }
+.s-person { --k: var(--person); --k-bg: var(--person); }
+.s-note { --k: var(--flag); --k-bg: var(--surface); }
+
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.55; }
+.page { max-width: 1280px; margin: 0 auto; padding-block: 28px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 44px; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(30px, 4vw, 42px); line-height: 1.08; }
+h2 { font-size: 23px; line-height: 1.2; }
+h3 { font-size: 18px; line-height: 1.25; }
+p { margin: 0; }
+code, .mono { font-family: var(--f-mono); font-size: .9em; }
+.eyebrow { font-size: 12px; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); font-weight: 600; }
+.lede { max-width: 72ch; }
+header.top { display: grid; gap: 12px; }
+.pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-top: 6px; }
+.variant { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: grid; gap: 6px; align-content: start; min-width: 0; }
+nav.jump { display: flex; flex-wrap: wrap; gap: 6px 8px; }
+nav.jump a { font: 500 14px var(--f-body); color: var(--ink); text-decoration: none; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; }
+nav.jump a:hover { border-color: var(--ink); }
+a:focus-visible { outline: 2px solid var(--a3); outline-offset: 2px; }
+section { display: grid; gap: 14px; min-width: 0; scroll-margin-top: 16px; }
+.section-head { display: grid; gap: 6px; }
+.section-head p { color: var(--muted); max-width: 78ch; }
+.stage { display: grid; grid-template-columns: minmax(0, 1fr) 350px; gap: 16px; align-items: start; }
+@media (min-width: 1081px) { aside.inspector { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); max-height: calc(100vh - 32px); overflow: auto; } }
+@media (max-width: 1080px) { .stage { grid-template-columns: minmax(0, 1fr); } }
+figure { margin: 0; min-width: 0; display: grid; gap: 8px; }
+.canvas { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow-x: auto; min-width: 0; }
+.canvas svg { display: block; margin: 0 auto; }
+figcaption { color: var(--muted); font-size: 13.5px; max-width: 86ch; }
+.flow-problems { margin: 0; padding: 10px 14px 10px 30px; border: 1px solid var(--flag); border-radius: 10px; color: var(--flag); font: 500 13px var(--f-mono); background: var(--surface); }
+aside.inspector { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+aside.inspector p { font-size: 14.5px; }
+.chip { justify-self: start; display: inline-flex; align-items: center; font: 600 11px var(--f-body); letter-spacing: .06em; text-transform: uppercase; padding: 2px 9px; border-radius: 999px; border: 1px solid currentColor; color: var(--k); }
+.chip.s-person { color: var(--ink); }
+.kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 14px; font-size: 14px; margin: 0; }
+.kv dt { color: var(--muted); } .kv dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 13.5px; color: var(--muted); align-items: center; }
+.legend span { display: inline-flex; align-items: center; gap: 8px; }
+.sw { display: inline-block; width: 24px; height: 15px; border-radius: 4px; border: 1.5px solid var(--k); background: var(--k-bg); }
+.sw.s-note { border-style: dashed; }
+.tablewrap { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow-x: auto; min-width: 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-top: 1px solid var(--line); }
+thead th { border-top: 0; font: 600 12px var(--f-body); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); background: var(--soft); }
+tbody th { font-weight: 600; width: 22%; min-width: 150px; }
+td { min-width: 220px; }
+.bars { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; display: grid; gap: 14px; }
+.bar-row { display: grid; gap: 4px; }
+.bar-label { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 16px; font-size: 14px; }
+.bar-label b { font-weight: 600; }
+.bar-label span { font-family: var(--f-mono); font-size: 13px; font-variant-numeric: tabular-nums; }
+.track { height: 16px; background: var(--soft); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.fill { height: 100%; border-radius: 3px 0 0 3px; background: var(--k); }
+.fill.faded { opacity: .45; }
+.bar-note { font-size: 13px; color: var(--muted); }
+.notes { display: grid; gap: 8px; max-width: 86ch; color: var(--muted); font-size: 14px; }
+.notes b { color: var(--ink); font-weight: 600; }
+svg text { font-family: var(--f-body); fill: var(--ink); }
+svg .t-tag { font: 500 10px var(--f-mono); letter-spacing: .06em; fill: var(--k); }
+svg .t-name { font-size: 13px; font-weight: 600; }
+svg .t-sub { font-size: 11.5px; fill: var(--muted); }
+svg .t-flag { font: 600 10px var(--f-body); fill: var(--flag); letter-spacing: .04em; }
+svg .edge { fill: none; stroke: var(--edge); stroke-width: 1.5; }
+svg .edge.loop { stroke-dasharray: 5 4; }
+svg .mk { fill: var(--edge); }
+svg .elabel rect { fill: var(--surface); }
+svg .elabel text { font-size: 11px; fill: var(--muted); }
+svg .t-label { font-size: 11px; }
+svg .node { cursor: pointer; }
+svg .node rect.box { stroke-width: 1.5; fill: var(--k-bg); stroke: var(--k); }
+svg .node.s-person text { fill: var(--person-fg); } svg .node.s-person .t-sub { opacity: .8; }
+svg .node.s-note rect.box { stroke-dasharray: 5 4; }
+svg .node:hover rect.box { stroke-width: 2.5; }
+svg .node.sel rect.box, svg .node:focus-visible rect.box { stroke-width: 3; }
+svg .node:focus { outline: none; }
+</style>
+
+<div class="page">
+  <header class="top">
+    <div class="eyebrow">EXAMPLE repo name &middot; the area this feature lives in</div>
+    <h1>EXAMPLE Password Reset</h1>
+    <p class="lede">EXAMPLE lede: the path in one or two sentences, from the trigger to the result, and the one thing a reader should carry away.</p>
+    <!-- Optional: one card per variant when the feature has two ways of doing the same thing. Delete otherwise. -->
+    <div class="pair">
+      <div class="variant"><h3>EXAMPLE variant A</h3><p>What this variant does differently, in two sentences.</p></div>
+      <div class="variant"><h3>EXAMPLE variant B</h3><p>What this variant does differently, in two sentences.</p></div>
+    </div>
+    <nav class="jump" id="jump" aria-label="On this page"></nav>
+    <div class="legend" id="legend" aria-label="Who does a step"></div>
+  </header>
+
+  <!-- One <section class="flow"> per diagram, in reading order. data-flow names an entry of FLOWS below. -->
+  <section class="flow" id="request-path" data-flow="request"></section>
+  <section class="flow" id="link-path" data-flow="link"></section>
+
+  <!-- Optional: measured numbers. Keep only with numbers that were measured, and say where each came from. -->
+  <section id="timing" data-nav="Timing">
+    <div class="section-head"><h2>EXAMPLE Where the time goes</h2><p>What was measured, on what, and when.</p></div>
+    <div class="bars">
+      <div class="bar-row">
+        <div class="bar-label"><b>EXAMPLE Request to email sent</b><span>1.8 s</span></div>
+        <div class="track"><div class="fill s-a2" style="width:60%"></div></div>
+        <div class="bar-note">EXAMPLE source: staging, 20 runs, median.</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label"><b>EXAMPLE Before the queue</b><span>3.0 s</span></div>
+        <div class="track"><div class="fill faded s-a2" style="width:100%"></div></div>
+        <div class="bar-note">EXAMPLE source: the same test, last release.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Optional: a comparison when the feature has variants, or a table of what crosses each boundary. -->
+  <section id="side-by-side" data-nav="Side by side">
+    <div class="section-head"><h2>EXAMPLE Side by side</h2></div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th scope="col"></th><th scope="col">EXAMPLE variant A</th><th scope="col">EXAMPLE variant B</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">EXAMPLE Who decides</th><td>One sentence.</td><td>One sentence.</td></tr>
+          <tr><th scope="row">EXAMPLE Grows with</th><td>One sentence.</td><td>One sentence.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<script>
+/* ============================================================== SPEC REFERENCE
+ACTORS   key -> { label, tag, slot }
+           label  legend and inspector chip ("Postgres")
+           tag    the small capitals on a node ("POSTGRES")
+           slot   its colour: person | code | a1 | a2 | a3 | a4 | a5 | note
+                  person = a human; code = our own code with no outside call;
+                  a1..a5 = one each for the other actors; note = a dashed annotation
+FLOWS    name -> one diagram:
+  title, intro, caption   heading, one muted paragraph, the figure's one claim
+  nav                     short label for the jump links (default: title)
+  cols, rows              the grid; a node sits at column c (0-based), row r
+  gx                      gap between columns in px (default 36; raise it when a
+                          side edge carries a label)
+  start                   id of the node the inspector shows first
+  nodes[]  { id, c, r, kind, title, sub, desc, facts, flag, tag, chip }
+           kind   a key of ACTORS
+           title  one line, about 30 characters
+           sub    one string, wrapped by the page to at most two lines
+           desc   paragraphs for the inspector (array of strings)
+           facts  rows for the inspector: [label, value] or [label, value, "mono"]
+           flag   a short red label on the node, for the step the question is about
+           tag, chip   override the actor's tag / chip for this node
+  edges[]  { s, t, label, kind, dy, loop }
+           (default)  s's bottom to t's top; t must be in the NEXT row
+           "side"     between two nodes of one row; dy offsets a pair (-14 / 14)
+           "back"     a loop on the right of one column, s to t in the same column;
+                      its label sits right of the loop, so leave room (gx) or an
+                      empty next column
+           "drop"     straight down s's column, then sideways into t; that
+                      column must be empty in between
+           loop: true draws it dashed (a retry, a rejection)
+The page checks the spec as it draws and lists every problem in red above the
+diagram and as console errors, prefixed "flow-check". Publish with none.
+============================================================================== */
+var ACTORS = {
+  user:  { label: "EXAMPLE User", tag: "USER", slot: "person" },
+  app:   { label: "EXAMPLE App server, no outside call", tag: "APP", slot: "code" },
+  db:    { label: "EXAMPLE Postgres", tag: "POSTGRES", slot: "a1" },
+  mail:  { label: "EXAMPLE Email service", tag: "EMAIL", slot: "a2" },
+  redis: { label: "EXAMPLE Redis rate limiter", tag: "REDIS", slot: "a3" },
+  note:  { label: "Measured", tag: "MEASURED", slot: "note" }
+};
+
+var FLOWS = {
+  request: {
+    title: "EXAMPLE Asking for a reset link", nav: "Request",
+    intro: "EXAMPLE intro: what this diagram covers and what to click.",
+    caption: "EXAMPLE caption: the one claim this figure makes.",
+    cols: 3, rows: 6, gx: 96, start: "token",
+    nodes: [
+      { id: "ask", c: 1, r: 0, kind: "user", title: "User asks for a reset link", sub: "Types an email address on the sign-in page",
+        desc: ["EXAMPLE what happens at this step and why, in one to three short paragraphs."], facts: [["Route", "POST /password/reset", "mono"]] },
+      { id: "deny", c: 0, r: 1, kind: "app", title: "Refuse: too many tries", sub: "429, and nothing else happens",
+        desc: ["EXAMPLE"], facts: [["Code", "auth/reset.py", "mono"]] },
+      { id: "limit", c: 1, r: 1, kind: "redis", title: "Rate limit check", sub: "Five requests per address per hour",
+        desc: ["EXAMPLE"], facts: [["Limit", "RESET_PER_HOUR = 5", "mono"], ["Code", "auth/limits.py", "mono"]] },
+      { id: "lookup", c: 1, r: 2, kind: "db", title: "Look up the account", sub: "By the address, lower-cased",
+        desc: ["EXAMPLE"], facts: [] },
+      { id: "none", c: 2, r: 2, kind: "app", title: "No such account", sub: "Says nothing about it to the user",
+        desc: ["EXAMPLE"], facts: [] },
+      { id: "store", c: 0, r: 3, kind: "db", title: "Token hash stored", sub: "The token itself is never saved",
+        desc: ["EXAMPLE"], facts: [] },
+      { id: "token", c: 1, r: 3, kind: "app", flag: "THE KEY STEP", title: "Create a one-time token", sub: "32 random bytes, valid for 30 minutes",
+        desc: ["EXAMPLE"], facts: [["Sent", "Nothing leaves the server here."], ["Code", "auth/tokens.py", "mono"]] },
+      { id: "send", c: 1, r: 4, kind: "mail", title: "Email the link", sub: "Queued, then sent by the email service",
+        desc: ["EXAMPLE"], facts: [] },
+      { id: "reply", c: 1, r: 5, kind: "app", title: "Same answer either way", sub: "“If that address exists, we sent a link”",
+        desc: ["EXAMPLE"], facts: [] }
+    ],
+    edges: [
+      { s: "ask", t: "limit" },
+      { s: "limit", t: "deny", kind: "side", label: "over the limit" },
+      { s: "limit", t: "lookup", label: "allowed" },
+      { s: "lookup", t: "none", kind: "side", label: "not found" },
+      { s: "lookup", t: "token", label: "found" },
+      { s: "token", t: "store", kind: "side", label: "hash" },
+      { s: "token", t: "send" }, { s: "send", t: "reply" },
+      { s: "none", t: "reply", kind: "drop", label: "no email sent" }
+    ]
+  },
+  link: {
+    title: "EXAMPLE Opening the link", nav: "Link",
+    intro: "EXAMPLE intro.",
+    caption: "EXAMPLE caption.",
+    cols: 2, rows: 5, gx: 120, start: "check",
+    nodes: [
+      { id: "click", c: 0, r: 0, kind: "user", title: "User opens the link", sub: "The token rides in the URL", desc: ["EXAMPLE"], facts: [] },
+      { id: "check", c: 0, r: 1, kind: "app", title: "Check the token", sub: "Hash it, compare, check the expiry", desc: ["EXAMPLE"], facts: [] },
+      { id: "row", c: 1, r: 1, kind: "db", title: "Token row", sub: "Hash, account and expiry", desc: ["EXAMPLE"], facts: [] },
+      { id: "form", c: 0, r: 2, kind: "user", title: "User types a new password", sub: "Twice", desc: ["EXAMPLE"], facts: [] },
+      { id: "rules", c: 0, r: 3, kind: "app", title: "Password rules", sub: "Length, and not a known leaked password", desc: ["EXAMPLE"], facts: [] },
+      { id: "slow", c: 1, r: 3, kind: "note", title: "Where the time goes", sub: "The leaked-password lookup: 300 ms of the 400", desc: ["EXAMPLE"], facts: [] },
+      { id: "save", c: 0, r: 4, kind: "db", title: "Password saved, token burned", sub: "Every other session is signed out", desc: ["EXAMPLE"], facts: [] }
+    ],
+    edges: [
+      { s: "click", t: "check" },
+      { s: "check", t: "row", kind: "side", dy: -14, label: "token hash" },
+      { s: "row", t: "check", kind: "side", dy: 14, label: "row, or none" },
+      { s: "check", t: "form", label: "valid" }, { s: "form", t: "rules" },
+      { s: "rules", t: "form", kind: "back", loop: true, label: "rejected" },
+      { s: "rules", t: "save", label: "accepted" }
+    ]
+  }
+};
+
+/* ============================================================== RENDERER (leave as it is) */
+(function () {
+  var NS = "http://www.w3.org/2000/svg", CW = 244, CH = 86, GY = 48, PX = 28, PY = 22, selected = {};
+  function el(tag, attrs, parent, text) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function h(tag, cls, parent, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function slotOf(kind) { return "s-" + ((ACTORS[kind] || {}).slot || "code"); }
+
+  function draw(section, name) {
+    var spec = FLOWS[name], problems = [];
+    section.textContent = "";
+    if (!spec) { h("p", "flow-problems", section, "flow-check: no flow named " + name); console.error("flow-check: no flow named " + name); return; }
+    function bad(msg) { problems.push(msg); console.error("flow-check [" + name + "]: " + msg); }
+    section.setAttribute("aria-label", spec.title);
+    var head = h("div", "section-head", section);
+    h("h2", "", head, spec.title);
+    if (spec.intro) h("p", "", head, spec.intro);
+    var stage = h("div", "stage", section), fig = h("figure", "", stage);
+    var list = h("ul", "flow-problems", fig); list.hidden = true;
+    var canvas = h("div", "canvas", fig);
+    if (spec.caption) h("figcaption", "", fig, spec.caption);
+    var insp = h("aside", "inspector", stage); insp.setAttribute("aria-live", "polite");
+
+    var GX = spec.gx || 36;
+    var W = PX * 2 + spec.cols * CW + (spec.cols - 1) * GX, H = PY * 2 + spec.rows * CH + (spec.rows - 1) * GY;
+    var svg = el("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": spec.caption || spec.title });
+    svg.style.cssText = "width:100%;height:auto;max-width:" + W + "px;min-width:" + Math.round(W * 0.8) + "px";
+    canvas.appendChild(svg);
+    var mk = el("marker", { id: "ah-" + name, viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: "auto-start-reverse" }, el("defs", {}, svg));
+    el("path", { d: "M0 0L10 5L0 10z", "class": "mk" }, mk);
+    var gEdges = el("g", {}, svg), gLabels = el("g", {}, svg), gNodes = el("g", {}, svg);
+    var probe = el("text", { x: 0, y: -100 }, svg);
+    function width(cls, str, perChar) {
+      probe.setAttribute("class", cls); probe.textContent = str;
+      var w = 0; try { w = probe.getComputedTextLength(); } catch (e) {}
+      return w || str.length * perChar;
+    }
+
+    var byId = {}, cells = {};
+    spec.nodes.forEach(function (n) {
+      if (byId[n.id]) bad("two nodes share the id " + n.id);
+      if (!ACTORS[n.kind]) bad("node " + n.id + " has an unknown kind " + n.kind);
+      var cell = n.c + "," + n.r;
+      if (cells[cell]) bad("nodes " + cells[cell] + " and " + n.id + " share column " + n.c + ", row " + n.r);
+      if (n.c >= spec.cols || n.r >= spec.rows) bad("node " + n.id + " is outside the " + spec.cols + " by " + spec.rows + " grid");
+      cells[cell] = n.id; byId[n.id] = n;
+      n.x = PX + n.c * (CW + GX); n.y = PY + n.r * (CH + GY);
+    });
+    function at(c, r) { return cells[c + "," + r]; }
+
+    function label(text, x, y, anchor) {
+      if (!text) return 0;
+      var w = width("t-label", text, 6.1) + 12, g = el("g", { "class": "elabel" }, gLabels);
+      el("rect", { x: anchor === "start" ? x - 4 : x - w / 2, y: y - 9, width: w, height: 18, rx: 4 }, g);
+      el("text", { x: anchor === "start" ? x + 2 : x, y: y + 4, "text-anchor": anchor === "start" ? "start" : "middle" }, g, text);
+      return w;
+    }
+    spec.edges.forEach(function (e) {
+      var s = byId[e.s], t = byId[e.t], d, r, lw, who = e.s + " → " + e.t;
+      if (!s || !t) { bad("edge " + who + " names a node that does not exist"); return; }
+      if (e.kind === "side") {
+        if (s.r !== t.r || Math.abs(s.c - t.c) !== 1) bad("side edge " + who + " needs two neighbours in one row");
+        var right = t.x > s.x, dy = e.dy || 0, x1 = right ? s.x + CW : s.x, x2 = right ? t.x : t.x + CW, y = s.y + CH / 2 + dy;
+        d = "M" + x1 + " " + y + "H" + x2;
+        lw = label(e.label, (x1 + x2) / 2, y + (dy < 0 ? -12 : dy > 0 ? 12 : -12), "middle");
+        if (lw > GX - 14) bad("the label of side edge " + who + " does not fit between the columns: raise gx to " + Math.ceil(lw + 20));
+      } else if (e.kind === "back") {
+        if (s.c !== t.c) bad("back edge " + who + " needs both nodes in one column");
+        var xo = s.x + CW + 30, y1 = s.y + CH / 2, y2 = t.y + CH / 2;
+        d = "M" + (s.x + CW) + " " + y1 + "H" + xo + "V" + y2 + "H" + (t.x + CW);
+        lw = label(e.label, xo + 10, (y1 + y2) / 2, "start");
+        if (xo + 10 + lw > W - 4) bad("the label of back edge " + who + " runs off the diagram: add a column or shorten it");
+        if (e.label && xo + 10 + lw > s.x + CW + GX - 6) for (r = Math.min(s.r, t.r); r <= Math.max(s.r, t.r); r++)
+          if (at(s.c + 1, r)) { bad("the label of back edge " + who + " runs into node " + at(s.c + 1, r) + ": raise gx to " + Math.ceil(lw + 50)); break; }
+      } else if (e.kind === "drop") {
+        if (s.c === t.c || t.r <= s.r) bad("drop edge " + who + " needs t lower down and in another column");
+        for (r = s.r + 1; r <= t.r; r++) if (at(s.c, r)) bad("drop edge " + who + " passes through node " + at(s.c, r));
+        var sx = s.x + CW / 2, ty = t.y + CH / 2;
+        d = "M" + sx + " " + (s.y + CH) + "V" + ty + "H" + (s.x > t.x ? t.x + CW : t.x);
+        label(e.label, sx, (s.y + CH + ty) / 2, "middle");
+      } else {
+        if (t.r !== s.r + 1) bad("edge " + who + " must go to the next row: move a node, or use kind drop or back");
+        var ax = s.x + CW / 2, ay = s.y + CH, bx = t.x + CW / 2, by = t.y, my = by - GY / 2;
+        if (Math.abs(ax - bx) < 1) { d = "M" + ax + " " + ay + "V" + by; label(e.label, ax, my, "middle"); }
+        else { d = "M" + ax + " " + ay + "V" + my + "H" + bx + "V" + by; label(e.label, (ax + bx) / 2, my, "middle"); }
+      }
+      el("path", { d: d, "class": "edge" + (e.loop ? " loop" : ""), "marker-end": "url(#ah-" + name + ")" }, gEdges);
+    });
+
+    var groups = {};
+    function select(id) {
+      var n = byId[id]; if (!n) return;
+      selected[name] = id;
+      for (var k in groups) groups[k].classList.toggle("sel", k === id);
+      insp.textContent = "";
+      h("span", "chip " + slotOf(n.kind), insp, n.chip || (ACTORS[n.kind] || {}).label || n.kind);
+      h("h3", "", insp, n.title);
+      [].concat(n.desc || []).forEach(function (p) { h("p", "", insp, p); });
+      if (n.facts && n.facts.length) {
+        var dl = h("dl", "kv", insp);
+        n.facts.forEach(function (f) { h("dt", "", dl, f[0]); h("dd", f[2] ? "mono" : "", dl, f[1]); });
+      }
+    }
+    spec.nodes.forEach(function (n) {
+      var inner = CW - 24, tag = n.tag || (ACTORS[n.kind] || {}).tag || "";
+      var g = el("g", { "class": "node " + slotOf(n.kind), tabindex: 0, role: "button", "aria-label": n.title + ". " + (n.sub || "") }, gNodes);
+      el("rect", { "class": "box", x: n.x, y: n.y, width: CW, height: CH, rx: 8 }, g);
+      el("text", { "class": "t-tag", x: n.x + 12, y: n.y + 18 }, g, tag);
+      if (n.flag) el("text", { "class": "t-flag", x: n.x + CW - 12, y: n.y + 18, "text-anchor": "end" }, g, n.flag);
+      if (width("t-name", n.title, 7) > inner) bad("the title of node " + n.id + " is too long for its box");
+      el("text", { "class": "t-name", x: n.x + 12, y: n.y + 38 }, g, n.title);
+      var lines = [], cur = "";
+      String(n.sub || "").split(/\s+/).filter(Boolean).forEach(function (w) {
+        var next = cur ? cur + " " + w : w;
+        if (cur && width("t-sub", next, 5.9) > inner) { lines.push(cur); cur = w; } else cur = next;
+      });
+      if (cur) lines.push(cur);
+      if (lines.length > 2) bad("the sub line of node " + n.id + " needs more than two lines: shorten it");
+      lines.slice(0, 2).forEach(function (line, i) { el("text", { "class": "t-sub", x: n.x + 12, y: n.y + 56 + i * 15 }, g, line); });
+      g.addEventListener("click", function () { select(n.id); });
+      g.addEventListener("keydown", function (ev) { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); select(n.id); } });
+      groups[n.id] = g;
+    });
+    svg.removeChild(probe);
+    if (!byId[spec.start]) bad("start names no node: " + spec.start);
+    select(selected[name] || spec.start);
+    if (problems.length) { list.hidden = false; problems.forEach(function (p) { h("li", "", list, "flow-check: " + p); }); }
+  }
+
+  function drawAll() {
+    [].forEach.call(document.querySelectorAll("section.flow"), function (s) { draw(s, s.getAttribute("data-flow")); });
+  }
+  var legend = document.getElementById("legend");
+  if (legend) Object.keys(ACTORS).forEach(function (k) {
+    var span = h("span", "", legend); h("i", "sw " + slotOf(k), span); span.appendChild(document.createTextNode(ACTORS[k].label));
+  });
+  var jump = document.getElementById("jump");
+  if (jump) [].forEach.call(document.querySelectorAll(".page > section[id]"), function (s) {
+    var f = FLOWS[s.getAttribute("data-flow")], a = h("a", "", jump, s.getAttribute("data-nav") || (f && (f.nav || f.title)) || s.id);
+    a.href = "#" + s.id;
+  });
+  drawAll();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawAll);  /* text is measured: draw again once the fonts are in */
+})();
+</script>

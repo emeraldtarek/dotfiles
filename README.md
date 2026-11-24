@@ -94,6 +94,19 @@ not vendored, because its skills read the reviewer agents and templates bundled 
 the plugin. Commands are `/egm:egm-brainstorm`, `/egm:egm-draft`, `/egm:egm-review`,
 `/egm:egm-resolve`, `/egm:egm-review-loop`, `/egm:egm-bootstrap` and `/egm:egm-drift-report`.
 
+**DuckDB.** [duckdb/duckdb-claude-plugin](https://github.com/duckdb/duckdb-claude-plugin)
+provides two plugins from the `duckdb-dialect` marketplace:
+
+- `duckdb-dialect` teaches Claude the DuckDB 2.0 dialect (lambda syntax, `//` by zero,
+  removed Python methods) so it stops writing 1.x SQL. Its `duckdb-sql` and
+  `duckdb-python` skills load on their own; `/duckdb-dialect:duckdb-upgrade` walks a 1.x
+  code base to 2.0.
+- `duckdb-results` is a mod that draws the CLI's agent-mode output as aligned tables under
+  the tool call. `/duckdb` opens a pane with the last 20 results, and `/duckdb <sql>` runs
+  a query without a Claude turn.
+
+The `duckdb` CLI itself comes from the Brewfile.
+
 **Update the plugin** (per profile; drop `CLAUDE_CONFIG_DIR` for `~/.claude`):
 
 ```bash

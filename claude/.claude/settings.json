@@ -69,7 +69,9 @@
     "twilio-developer-kit@twilio": true,
     "internal-tooling@adadvisor-internal": true,
     "egm@egm": true,
-    "elevenlabs@elevenlabs": true
+    "elevenlabs@elevenlabs": true,
+    "duckdb-dialect@duckdb-dialect": true,
+    "duckdb-results@duckdb-dialect": true
   },
   "extraKnownMarketplaces": {
     "vercel-vercel-plugin": {
@@ -124,6 +126,12 @@
       "source": {
         "source": "github",
         "repo": "elevenlabs/plugin"
+      }
+    },
+    "duckdb-dialect": {
+      "source": {
+        "source": "github",
+        "repo": "duckdb/duckdb-claude-plugin"
       }
     }
   },

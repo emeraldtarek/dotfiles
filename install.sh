@@ -121,6 +121,7 @@ if command -v claude &> /dev/null; then
     claude plugin marketplace add duckdb/duckdb-claude-plugin 2>/dev/null || true
     claude plugin install duckdb-dialect@duckdb-dialect 2>/dev/null || true
     claude plugin install duckdb-results@duckdb-dialect 2>/dev/null || true
+    claude plugin install duckdb-skills@claude-plugins-official 2>/dev/null || true
     echo "  done"
 else
     echo "Skipping Claude Code plugins (claude not installed)"

@@ -71,7 +71,8 @@
     "egm@egm": true,
     "elevenlabs@elevenlabs": true,
     "duckdb-dialect@duckdb-dialect": true,
-    "duckdb-results@duckdb-dialect": true
+    "duckdb-results@duckdb-dialect": true,
+    "duckdb-skills@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "vercel-vercel-plugin": {

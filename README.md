@@ -94,8 +94,9 @@ not vendored, because its skills read the reviewer agents and templates bundled 
 the plugin. Commands are `/egm:egm-brainstorm`, `/egm:egm-draft`, `/egm:egm-review`,
 `/egm:egm-resolve`, `/egm:egm-review-loop`, `/egm:egm-bootstrap` and `/egm:egm-drift-report`.
 
-**DuckDB.** [duckdb/duckdb-claude-plugin](https://github.com/duckdb/duckdb-claude-plugin)
-provides two plugins from the `duckdb-dialect` marketplace:
+**DuckDB.** Three plugins. Two come from the `duckdb-dialect` marketplace
+([duckdb/duckdb-claude-plugin](https://github.com/duckdb/duckdb-claude-plugin)), and
+one from `claude-plugins-official`:
 
 - `duckdb-dialect` teaches Claude the DuckDB 2.0 dialect (lambda syntax, `//` by zero,
   removed Python methods) so it stops writing 1.x SQL. Its `duckdb-sql` and
@@ -104,6 +105,12 @@ provides two plugins from the `duckdb-dialect` marketplace:
 - `duckdb-results` is a mod that draws the CLI's agent-mode output as aligned tables under
   the tool call. `/duckdb` opens a pane with the last 20 results, and `/duckdb <sql>` runs
   a query without a Claude turn.
+- `duckdb-skills` ([duckdb/duckdb-skills](https://github.com/duckdb/duckdb-skills)) does
+  the work: `/duckdb-skills:read-file` profiles CSV, Parquet, JSON, Excel and more, locally
+  or on S3/GCS/HTTPS. `query`, `attach-db`, `convert-file`, `s3-explore` and `spatial`
+  query data. `duckdb-docs` searches the docs, `read-memories` searches past session logs,
+  and `install-duckdb` adds extensions. Session state lives in a per-project `state.sql`
+  (`duckdb -init state.sql` restores it).
 
 The `duckdb` CLI itself comes from the Brewfile.
 
